@@ -115,7 +115,7 @@ Hardware requirements
 =====================
 
 - `Adafruit PyPortal Titano <https://www.adafruit.com/product/4444>`
-- `Unexpected Maker PROS3 <https://unexpectedmaker.com/shop/pros3>`
+- `Unexpected Maker PROS3 <https://www.adafruit.com/product/5401>`
 - `Adafruit Grove to STEMMA QT / Qwiic / JST SH Cable - 100mm long. <https://www.adafruit.com/product/4528>`
 - `Seeedstudio Grove - 4 pin Male Jumper to Grove 4 pin Conversion Cable (<https://www.amazon.com/Seeedstudio-Grove-Jumper-Conversion-Cable/dp/B01BYN9OMG>)`
 - `Tiny Premium Breadboard. <https://www.adafruit.com/product/65>`
