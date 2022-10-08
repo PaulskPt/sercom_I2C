@@ -2,7 +2,7 @@
 # SPDX-FileCopyrightText: Copyright (c) 2022 Paulus Schulinck @PaulskPt
 #
 # SPDX-License-Identifier: MIT
-# 
+#
 # Serial communication via I2C (alias: 'Sercom I2C')
 # This script is intendedc for the device with the 'Sensor' role, in my case an Unexpected Maker PROS3
 import board
@@ -61,14 +61,14 @@ default_dt = '2022-10-06 01:15:00'  # For the sake of the test a default datetim
 
     :param  None
     :return int    nr_bytes received
-   
+
     This function checks for incoming characters. If received incoming characters,
     the funtions first checks for reception of a transmission of 2 bytes,
-    containing: 
+    containing:
     a) the address of the Sensor device that the originator (device with Main role)
-    wants to address this request; 
+    wants to address this request;
     b) one byte containing a request code.
-   
+
     REQUEST (2-byte transmission) received?                           (FLOWCHART)
     > Yes
         > Addressed to me?
@@ -83,22 +83,22 @@ default_dt = '2022-10-06 01:15:00'  # For the sake of the test a default datetim
                 > Do nothing
     > No
         > Do nothing
-   
+
     In words:
     When this function receives a request, the following steps are executed:
     1) determine if the request is addressed to this device (with Sensor role);
     2) if so:
         a) check the validity of the request code;
-        b) if the request code is valid, copy the received request code into 
+        b) if the request code is valid, copy the received request code into
         the global variable 'req_rcvd';
     3) send an an acknowledge code (_ACK) to the device from which the Sensor
-        device received the request. The acknowledge contains the address of 
+        device received the request. The acknowledge contains the address of
         the sender device (Main role).add()
     The calling function (loop()) will 'handle' the received request.
-   
-    This function also 'fills' the global rx_buffer with characters received. 
+
+    This function also 'fills' the global rx_buffer with characters received.
     In case of a KeyboardInterrupt during the execution of this function, the function
-    will return a value of -1, 'signalling' the calling function (loop()) 
+    will return a value of -1, 'signalling' the calling function (loop())
     that a KeyboardInterrupt has occurred.
 
 """
@@ -198,9 +198,9 @@ loop_nr = 1
                  the function will return a value of -1
                  to 'signal' to the calling function (main())
                  that a Keyboard Interrupt took place.
-    
+
     This function checks incoming request codes.
-    Only the 'date_time' request is implemented yet. 
+    Only the 'date_time' request is implemented yet.
     The two other 'unix_datetime' or 'weather'
     are not implemented.
 """
@@ -251,11 +251,11 @@ def loop():
 
    :param  None
    :return None
-   
-   This function sends a datetime string to the device that sent the request. 
+
+   This function sends a datetime string to the device that sent the request.
    In this moment, for the sake of this test, only a fixed (static) datetime string
    is programmed in this script. In future versions one could combine the functionality
-   of this script into a script in which the device connects to Internet and then 
+   of this script into a script in which the device connects to Internet and then
    requests, e.g. using the adafruit_ntp module, for an NTP datetime synchronization.
    After receiving this updated time, send that datetime string to the device that
    requested for the datetime.
@@ -296,8 +296,8 @@ def send_wx():
 
    :param  None
    :return None
-   
-   Function creates a new instance of the rx_buffer bytearray 
+
+   Function creates a new instance of the rx_buffer bytearray
 """
 def empty_buffer():
     global rx_buffer, rx_buffer_len
@@ -307,8 +307,8 @@ def empty_buffer():
     Function main()
 
     :param  None
-    :return None 
-   
+    :return None
+
     This function contains the main loop of this script.
     It prints introduction texts to the REPL.
     Next it calls the loop() function in which the script
