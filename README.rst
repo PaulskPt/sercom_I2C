@@ -19,12 +19,15 @@ After receiving this new information, I was able to start a 'Plan B': to let the
 using UART, (CircuitPython busio.UART class) while using the I2C SCL and SDA wires for the communication.
 Below the code to create an instance of the UART class:
 
-`uart = UART(board.SDA, board.SCL, baudrate=4800, timeout=0, receiver_buffer_size=rx_buffer_len)`
+.. code-block:: python
+uart = UART(board.SDA, board.SCL, baudrate=4800, timeout=0, receiver_buffer_size=rx_buffer_len)
 
-As with the usual serial communication via UART, with serial communication via I2C wires 
-it is necessary to have the I2C wires 'crossed':
-    SDA (device with role Main) ===> SCL (device with role Sensor)
-    SCL (device with role Main) ===> SDA (device with role Sensor)
+As with the usual serial communication via UART, with serial communication via I2C wires it is necessary to have the I2C wires 'crossed':
+
+.. code-block:: shell
+SDA (device with role Main) ===> SCL (device with role Sensor)
+
+SCL (device with role Main) ===> SDA (device with role Sensor)
  
 To accomplish this, I used a small breadboard and I2C cables (type 4-pin Grove male connector to 4 wires with male MOLEX pins for the Titano), 
 (type 4-pin STEMMA/Qwiic male connector to 4 wires with male MOLEX pins for the PROS3). See the image of the hardware setup in the docs folder.
@@ -39,7 +42,7 @@ A request message contans 2 bytes:
 
 Below a flowchart of the handling of a received request:
 
-
+.. code-block:: shell
 REQUEST (2-byte transmission) received?                           (FLOWCHART)
     > Yes
         > Addressed to me?
@@ -68,6 +71,8 @@ will end the execution of the script with calling 'sys.exit()'.
 
 Meanwhile, in the script running in the device with the Main role, the looping proceeds inside the main() function.
 At passing of an interval time, generally two actions will be executed:
+
+.. code-block:: shell
 a) call send_dt() to send a datetime request;
 b) call ck_uart() to check incoming acknowlegements and incoming replies, in this example: a message containing a datetime.
 
@@ -90,11 +95,13 @@ using the adafruit_ntp module, using the Adafruit IO Time Service or another NTP
 My answer to this question is: 'that is corect'. 
 However I was trying to run on the Titano an Adafruit_CircuitPython_DisplayIO_FlipClock 
 (`<https://github.com/adafruit/Adafruit_CircuitPython_DisplayIO_FlipClock>`). The flipclock uses bitmapped spritesheets
-that consume a big part of the memory during runtime. Then in my version of that example script 
-there are the needed functions for connecting to internet, requesting and handling datetime synchronizations.
+that consume a big part of the memory at runtime. Then, in my version of that example script, 
+there are functions needed for connecting to internet, requesting and handling datetime synchronizations.
 Together it appeared that all this consumed too much memory for the PyPortal Titano. Causing memory errors. 
 I had to disable an important functionality, 'dynamic fading' (cedargrove_palettefader.py from: 
 `<https://github.com/CedarGroveStudios/CircuitPython_PaletteFader>`), to prevent memory errors. 
+@foamyguy, the author of the flipclock repo, in an attempt to help me resolve memory errors, created 
+smaller bitmapped spritesheets. This helped, however, for my PyPortal Titano not enough.
 Thinking about a solution, the idea was 'born' to move the 'overhead' of internet connection, datetime updates
 from the Titano to a second device, in my case an Unexpected Maker PROS3, which also has WiFi capability.
 The UM PROS3 also has lot more memory than the Titano.
@@ -110,7 +117,7 @@ Hardware requirements
 - `Adafruit PyPortal Titano <https://www.adafruit.com/product/4444>`
 - `Unexpected Maker PROS3 <https://unexpectedmaker.com/shop/pros3>`
 - `Adafruit Grove to STEMMA QT / Qwiic / JST SH Cable - 100mm long. <https://www.adafruit.com/product/4528>`
-- `Seeedstudio Grove - 4 pin Male Jumper to Grove 4 pin Conversion Cable (5 PCs per Pack) (ASIN B01BYN9OMG)`
+- `Seeedstudio Grove - 4 pin Male Jumper to Grove 4 pin Conversion Cable (<https://www.amazon.com/Seeedstudio-Grove-Jumper-Conversion-Cable/dp/B01BYN9OMG>)`
 - `Tiny Premium Breadboard. <https://www.adafruit.com/product/65>`
 - `Grove Hub e.g.: M5Stack 1 to 3 HUB Expansion Unit. <https://shop.m5stack.com/products/mini-hub-module>`
    or `Grove I2C Hub. <https://www.seeedstudio.com/Grove-I2C-Hub.html>`
