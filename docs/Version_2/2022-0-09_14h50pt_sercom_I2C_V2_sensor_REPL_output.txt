@@ -1,0 +1,88 @@
+Sunday 2022-10-09 14h50 utc+1
+by @PaulskPt
+Platform: Unexpected Maker PROS3
+Project: sercom_I2C
+Version: 2
+Script for device with role Sensor.
+IDE: mu-editor v 1.1.1
+
+Note: this is the first time the script is doing what it is meant to do:
+ 1) scan WiFi networks available;
+ 2) connect to internet;
+ 3) ping google.com;
+ 4) loop for receiving a request message from the device with role Main;
+ 5) send an acknowledge to the received request;
+ 6) get fresh NTP time;
+ 7) if necessary (at certain interval time) set the built-in RTC to the fresh NTP datetime;
+ 8) do some datetime conversion if necessary;
+ 9) send a datetime message to the device from which the request was received (device with role Main);
+10) continue to loop and await other request message(s).
+
+
+REPL output:
+
+soft reboot
+
+Auto-reload is on. Simply save files over USB to run them or enter REPL to disable.
+code.py output:
+]0;🐱92.168.1.111 | code.py | 8.0.0-beta.1-4-g1fd09cb6d\
+
+====================================
+SERCOM VIA I2C TEST
+Running on an UNEXPECTEDMAKER_PROS3
+in the role of Sensor
+====================================
+setup(): using local time ? = True
+
+main(): trying to connect WiFi...
+do_connect(): wifi.radio.enabled= True
+
+pr_scanned_ap(): 
+Available WiFi networks (sorted on: 'rssi')
+	AP nr  1	SSID: Vodafone-287778_EXT           	RSSI: -50	Channel: 11
+	AP nr 10	SSID: MEO-AFM_EXT                   	RSSI: -68	Channel:  3
+	AP nr  0	SSID: devolo-1a9                    	RSSI: -74	Channel:  6
+	AP nr  2	SSID: MEO-FEEE80                    	RSSI: -78	Channel: 11
+	AP nr  3	SSID: Vodafone-287778               	RSSI: -79	Channel: 11
+	AP nr  4	SSID: MEO-WiFi                      	RSSI: -80	Channel: 11
+	AP nr 11	SSID: MEO-AFM                       	RSSI: -81	Channel:  3
+	AP nr 12	SSID: MEO-WiFi                      	RSSI: -83	Channel:  3
+	AP nr 14	SSID: NOS-1861                      	RSSI: -84	Channel:  8
+	AP nr  5	SSID: MEO-WiFi                      	RSSI: -86	Channel: 11
+	AP nr  6	SSID: MEO-8997C0                    	RSSI: -87	Channel: 11
+	AP nr  7	SSID: ThomsonDAA08B                 	RSSI: -89	Channel: 11
+	AP nr 13	SSID: TP-Link_4E72                  	RSSI: -90	Channel:  3
+	AP nr  8	SSID: MEO-WiFi                      	RSSI: -90	Channel: 11
+	AP nr 15	SSID: Vodafone-48D3E0               	RSSI: -91	Channel: 10
+	AP nr  9	SSID: Mateus                        	RSSI: -91	Channel: 11
+do_connect(): dc_ip= None. type(dc_ip)= <class 'NoneType'>
+do_connect(): cnt= 0
+do_connect(): s_ip= '192.168.1.111'
+do_connect(): connected to Vodafone-287778_EXT!
+do_connect(): IP address is 192.168.1.111
+do_connect(): resolved google as 142.250.184.14
+do_connect(): no response
+do_connect(): no response
+do_connect(): Ping 142.250.184.14: 18.0 ms
+loop(): loop nr: 1
+ck_uart(): received address: 0x25
+ck_uart(): received request: 100 = date_time
+ck_uart(): acknowledge on request sent
+loop(): the device with role: Main requested to send: date_time
+loop(): going to send date_time
+refresh_from_NTP(): ntp object created
+refresh_from_NTP(): dt= struct_time(tm_year=2022, tm_mon=10, tm_mday=9, tm_hour=14, tm_min=50, tm_sec=57, tm_wday=6, tm_yday=282, tm_isdst=-1)
+refresh_from_NTP(): type(ntp.datetime)= <class 'struct_time'>
+refresh_from_NTP(): ntp.datetime()=struct_time(tm_year=2022, tm_mon=10, tm_mday=9, tm_hour=14, tm_min=50, tm_sec=57, tm_wday=6, tm_yday=282, tm_isdst=-1), type(dt)=<class 'struct_time'>
+conv_strutime_to_str(): param dt_stru= struct_time(tm_year=2022, tm_mon=10, tm_mday=9, tm_hour=14, tm_min=50, tm_sec=57, tm_wday=6, tm_yday=282, tm_isdst=-1)
+conv_strutime_to_str(): retval= '2022-10-09 14:50:57'
+refresh_from_NTP(): default_s_dt= 2022-10-09 14:50:57
+refresh_from_NTP(): Built-in RTC is synchronized from NTP pool, now =
+	struct_time(tm_year=2022, tm_mon=10, tm_mday=9, tm_hour=14, tm_min=50, tm_sec=57, tm_wday=6, tm_yday=282, tm_isdst=-1)
+refresh_from_NTP(): default_dt is updated from NTP=
+	struct_time(tm_year=2022, tm_mon=10, tm_mday=9, tm_hour=15, tm_min=50, tm_sec=57, tm_wday=6, tm_yday=282, tm_isdst=-1)
+send_dt(): default_s_dt= 2022-10-09 14:50:57
+send_dt(): to do: sending default_dt= '2022-10-09 14:50:57'
+send_dt(): datetime '2022-10-09 14:50:57' sent. Nr of characters: 19
+send_dt(): contents of the msg= bytearray(b' \x13\x022022-10-09 14:50:57')
+loop(): loop nr: 2
