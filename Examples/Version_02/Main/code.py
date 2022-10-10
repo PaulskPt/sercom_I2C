@@ -7,7 +7,6 @@
 # Modified to incorporate 'sercom_I2C' serial communication via I2C wires.
 # Version 2
 #
-
 import time
 import gc
 import sys
@@ -23,7 +22,7 @@ my_debug = False
 use_ntp = True
 use_local_time = None
 use_flipclock = True
-use_dynamic_fading = True
+use_dynamic_fading = False
 
 _STX = const(0x02)  # Start-of-text ASCII code
 _ACK = const(0x06)  # Acknowledge ASCII code
@@ -91,7 +90,7 @@ def setup():
     if not rtc:
         so = 'RTC'
     if not uart or not rtc:
-        print(TAG+f"failed to create an instane of the {so} object")
+        print(TAG+f"failed to create an instance of the {so} object")
     try:
         from secrets import secrets
     except ImportError:
@@ -102,8 +101,6 @@ def setup():
         use_local_time = False
     else:
         lt2 = int(lt)
-        if my_debug:
-            print("lt2=", lt2)
         use_local_time = True if lt2 == 1 else False
     if use_local_time:
         location = secrets.get("timezone", None)
@@ -123,7 +120,6 @@ def setup():
 
 def find_c(c):
     global rx_buffer
-    TAG = tag_adj("find_c():   ")
     f_dict = {}
     c2 = ''
     o_cnt = 0
@@ -165,9 +161,10 @@ def ck_uart():
     msg_is_for_us = False
     t_buf = None
 
-    while True:
+
+    try:
         empty_buffer()  # clear the rx_buffer
-        try:
+        while True:
             u_now = time.monotonic()
             if u_now > u_end:
                 print(TAG+f"timed-out. u_now= {u_now}, u_end= {u_end}")
@@ -191,6 +188,9 @@ def ck_uart():
                 rd = "{}".format(rx_buffer)
                 print(TAG+f"rcvd data= {rd}" ,end="\n")
             if nr_bytes >0:
+                #-------------------------------------------------------
+                uart.reset_input_buffer()  # Clear the uart buffer
+                #-------------------------------------------------------
                 if nr_bytes == 2 and not ACK_rcvd:
                     f_dict = find_c(_ACK) # find occurrence of ACK
                     if isinstance(f_dict, dict):
@@ -233,7 +233,8 @@ def ck_uart():
                     print(TAG+f"received value for msg length= {le_msg}")
                     msg = ''
                     t_buf = rx_buffer[STX_idx+1:STX_idx+1+le_msg]
-                    # get the actual length (the sent length can be wrong if we miss one or more characters)
+                    # the length sent with the msg (le_msg) can be different from the length
+                    # calculated here (le), in case the UART missed one or more characters!
                     le = len(t_buf)
                     if le != le_msg:
                         print(TAG+"received message is invalid:")
@@ -262,10 +263,8 @@ def ck_uart():
                 empty_buffer()  # create a new instance of the rx_buffer (bytearray)
                 time.sleep(delay_ms)
                 continue  # go around
-        except KeyboardInterrupt:
-            nr_bytes = -1
-    if my_debug:
-        print(TAG+"Exiting...")
+    except KeyboardInterrupt:
+        nr_bytes = -1
     return nr_bytes
 
 def send_req(c):
@@ -318,7 +317,8 @@ def make_clock():
             top_anim_palette.make_transparent(_)
             btm_anim_palette.make_transparent(_)
         gc.collect()
-        print(TAG+f"mem_free= {gc.mem_free()}")
+        if my_debug:
+            print(TAG+f"mem_free= {gc.mem_free()}")
         try:
             clock = FlipClock(
                     static_ss,
@@ -347,7 +347,6 @@ def make_clock():
 
 def dt_adjust():
     global default_dt, unix_dt
-    TAG=tag_adj("dt_adjust(): ")
     if rtc_is_set:
         default_dt = time.localtime(time.time())
         unix_dt = time.time()
@@ -355,6 +354,7 @@ def dt_adjust():
 def upd_tm(show_t: bool = False):
     global clock, default_dt, default_s_dt, hour_old, min_old
     TAG=tag_adj("upd_tm(): ")
+    wait = 1
     ret = 1
     if show_t and not rtc_is_set:
         print(TAG+"built-in RTC is not (yet) set")
@@ -384,7 +384,7 @@ def upd_tm(show_t: bool = False):
             p_time = True
         if p_time:
             if use_flipclock:
-                wait = 1
+
                 try:
                     fp = "{:02d}".format(hh)
                     clock.first_pair = fp
@@ -405,11 +405,7 @@ def upd_tm(show_t: bool = False):
 
 def dtstr_to_stru():
     global default_dt
-    TAG=tag_adj("dtstr_to_stru(): ")
     ret = None
-    if my_debug:
-        print(TAG+f"default_dt= {default_dt}")
-        print(TAG+f"default_s_dt= {default_s_dt}")
     if isinstance(default_s_dt, str):
         s = default_s_dt
         le = len(s)
@@ -458,9 +454,10 @@ def main():
     start = True
     t_shown = False
     t_elap_old = 0
+    stop = False
 
-    while True:
-        try:
+    try:
+        while True:
             t_curr = time.monotonic()
             t_elapsed = int(float(t_curr - t_start))
             if t_elapsed > 0 and t_elapsed % 10 == 0:
@@ -471,19 +468,22 @@ def main():
                 # At minute interval update the flipclock display
                 res = upd_tm(False)
                 if res == -1:
-                    raise KeyboardInterrupt
+                    stop = True
+                    break
             if start or (t_elapsed > 0 and t_elapsed % t_interval == 0):
                 t_start = t_curr
                 t_shown = False
                 rtc_is_set = False  # sync buitl-in RTC from NTC)
                 req = req_rev_dict['date_time']
                 print(TAG+f"going to send request for {req_dict[req]} to device with role: {roles_dict[1]}")
-                sr = send_req(req)
-                if sr == -1:
-                    raise KeyboardInterrupt
+                res = send_req(req)
+                if res == -1:
+                    stop = True
+                    break
                 nr_bytes = ck_uart()  # Check and handle incoming requests and control codes
                 if nr_bytes == -1:
-                    raise KeyboardInterrupt
+                    stop = True
+                    break
                 gc.collect()
                 print(TAG+f"mem_free= {gc.mem_free()}")
                 if isinstance(default_s_dt, str):
@@ -494,23 +494,26 @@ def main():
                             rtc_is_set = True
                             t_check = time.localtime(time.time())
                             print(TAG+f"Built-in RTC is synchronized from NTP pool")
-                            if my_debug:
-                                print(TAG+f"\n\t{dt}")
                         if start:
                             res = upd_tm(True)
                         else:
                             res = upd_tm(False)
                         if res == -1:
-                            raise KeyboardInterrupt
+                            stop = True
+                            break
+
                 start=False
                 gc.collect()
             time.sleep(0.75)
-        except KeyboardInterrupt:
-            print("Keyboard interrupt. Exiting...")
-            sys.exit()
-        except ValueError as e:
-            print("ValueError", e)
-            raise
+        if stop:
+            print(TAG+"we're going to stop...")
+            raise KeyboardInterrupt
+    except KeyboardInterrupt:
+        print("Keyboard interrupt. Exiting...")
+        sys.exit()
+    except ValueError as e:
+        print("ValueError", e)
+        raise
 
 if __name__ == '__main__':
     main()
