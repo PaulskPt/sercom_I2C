@@ -109,7 +109,7 @@ tag_le_max = 20  # see tag_adj()
 uart = UART(board.SDA, board.SCL, baudrate=4800, timeout=0, receiver_buffer_size=rx_buffer_len)
 
 def setup():
-    global rtc, esp, tz_offset, use_local_time, aio_username, aio_key, location
+    global rtc, tz_offset, use_local_time, location
     TAG=tag_adj("setup(): ")
 
     if not uart:
@@ -201,7 +201,7 @@ def find_c(c):
    Function ck_uart()
 
    :param None
-   Return type: int, nr_bytes received
+   :return type: int, nr_bytes received
 
    This function 'fills' the global rx_buffer with characters received.
    It checks for reception of an ACK ASCII code, being the 'acknowledge' by the device
@@ -216,7 +216,7 @@ def find_c(c):
 
 """
 def ck_uart():
-    global rx_buffer, msg_nr, loop_time, my_debug, last_req_sent, my_ads, default_s_dt, unix_dt, ACK_rcvd
+    global rx_buffer, msg_nr, my_debug, last_req_sent, my_ads, default_s_dt, unix_dt, ACK_rcvd
     TAG = tag_adj('ck_uart():  ')
     nr_bytes = 0
     delay_ms = 0.2
@@ -246,7 +246,6 @@ def ck_uart():
                 time.sleep(0.2)
                 continue  # Go around
             nr_bytes = len(rx_buffer)
-            loop_time = time.monotonic()
             if nr_bytes is None:
                 if not my_debug:
                     print(TAG+"nr_bytes received is None")
@@ -626,7 +625,7 @@ def tag_adj(t):
    It calls send_req() at the set interval times
 """
 def main():
-    global t_start, rtc_is_set
+    global t_start, rtc, rtc_is_set
     TAG=tag_adj("main(): ")
     dt = None
     gc.collect()
@@ -710,16 +709,13 @@ def main():
                             raise KeyboardInterrupt
                 start=False
                 gc.collect()
-            upd_tm()
-            gc.collect()
             time.sleep(0.75)
-            pass
-        except ValueError as e:
-            print("ValueError", e)
-            raise
         except KeyboardInterrupt:
             print("Keyboard interrupt. Exiting...")
             sys.exit()
+        except ValueError as e:
+            print("ValueError", e)
+            raise
 
 if __name__ == '__main__':
     main()
