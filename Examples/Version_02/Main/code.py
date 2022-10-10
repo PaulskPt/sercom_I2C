@@ -74,6 +74,9 @@ clock = None
 display = board.DISPLAY
 t_start = time.monotonic()
 tz_offset = 0
+tm_hour = 3
+tm_min = 4
+tm_sec = 5
 hour_old = 0
 min_old = 0
 tag_le_max = 20  # see tag_adj()
@@ -161,6 +164,8 @@ def ck_uart():
     msg_is_for_us = False
     t_buf = None
     ck_art_loopnr = 0
+    cln = ''
+    msg_valid = False
 
     try:
         empty_buffer()  # clear the rx_buffer
@@ -171,7 +176,9 @@ def ck_uart():
             if u_now > u_end:
                 print(TAG+f"timed-out. u_now= {u_now}, u_end= {u_end}")
                 return 0  # timeout
-            rx_buffer = uart.read(rx_buffer_len)
+            #-----------------------------------------------------
+            rx_buffer = uart.read(rx_buffer_len)  # Reception here
+            #-----------------------------------------------------
             if rx_buffer is None:
                 time.sleep(0.2)
                 continue  # Go around
@@ -187,6 +194,7 @@ def ck_uart():
                 # print(TAG+f"type(rx_buffer)={type(rx_buffer)}")
                 print(TAG+f"rcvd data= {rx_buffer}" ,end="\n")
             if nr_bytes >0:
+                rx_buffer_s = rx_buffer.decode()
                 #-------------------------------------------------------
                 uart.reset_input_buffer()  # Clear the uart buffer
                 #-------------------------------------------------------
@@ -225,7 +233,7 @@ def ck_uart():
                                 continue  # go around
                     # Check the STX flag again. Could be changed in last lines above
                     if STX_rcvd:
-                        if not my_debug:
+                        if my_debug:
                             print(TAG+f"STX code received from {roles_dict[1]}")
                         if last_req_sent == req_rev_dict['date_time']:
                             ads = rx_buffer[0]
@@ -243,40 +251,35 @@ def ck_uart():
                             if not my_debug:
                                 print(TAG+f"received value for msg length= {le_msg}")
                             msg = ''
-                            t_buf = rx_buffer[STX_idx+1:STX_idx+1+le_msg]
-                            # the length sent with the msg (le_msg) can be different from the length
-                            # calculated here (le), in case the UART missed one or more characters!
-                            le = len(t_buf)
-                            if le != le_msg:
-                                if not my_debug:
-                                    print(TAG+"received message is invalid:")
-                                    print(TAG+f"received msg length: {le_msg}. Actual measured msg length= {le}")
-                                    #raise RuntimeError
-                                #time.sleep(delay_ms)
-                                #continue  # go around
-                            for i in range(le):
-                                msg += chr(t_buf[i])
-                            if last_req_sent in req_dict.keys():
-                                s_req = req_dict[last_req_sent]
-                                # print(TAG+f"s_req= \'{s_req}\'")
-                                if s_req == 'date_time':
-                                    #-------------------------------------------------
-                                    default_s_dt = msg    # Global datetime var set
-                                    #-------------------------------------------------
-                                    vrf = default_s_dt  # vrf stands for variable received from
-                                    s_vrf = 'default_s_dt'
-                                elif s_req == 'unix_time':
-                                    unix_dt = msg
-                                    vrf = unix_dt
-                                    s_vrf = 'unix_dt'
-                                drf = s_req+" received from "
-                                if my_debug:
-                                    print(TAG+drf+f"{roles_dict[1]} = \'{default_s_dt}\', type(default_S_dt)= {type(default_s_dt)}")
-                                    print(TAG+f"length of datetime= {le_msg}")
-                                else:
-                                    print(TAG+drf+f"{roles_dict[1]} = \'{default_s_dt}\'")
-                                # print(TAG+"received valid datetime. Exiting ck_uart()")
-                                break
+
+                            if len(rx_buffer_s) >= le_msg:
+                                cln = rx_buffer_s[-3]
+                                msg_valid = True if STX_rcvd and cln == ':' else False
+                                s = 'message is{} valid'.format('' if msg_valid else ' not')
+                                print(TAG+s)
+                                msg = rx_buffer_s[STX_idx+1:STX_idx+1+le_msg]
+                                # print(TAG+f"check: msg= \'{msg}\'")
+                                if last_req_sent in req_dict.keys():
+                                    s_req = req_dict[last_req_sent]
+                                    # print(TAG+f"s_req= \'{s_req}\'")
+                                    if s_req == 'date_time':
+                                        #-------------------------------------------------
+                                        default_s_dt = msg    # Global datetime var set
+                                        #-------------------------------------------------
+                                        vrf = default_s_dt  # vrf stands for variable received from
+                                        s_vrf = 'default_s_dt'
+                                    elif s_req == 'unix_time':
+                                        unix_dt = msg
+                                        vrf = unix_dt
+                                        s_vrf = 'unix_dt'
+                                    drf = s_req+" received from "
+                                    if my_debug:
+                                        print(TAG+drf+f"{roles_dict[1]} = \'{default_s_dt}\', type(default_S_dt)= {type(default_s_dt)}")
+                                        print(TAG+f"length of datetime= {le_msg}")
+                                    # else:
+                                    #    print(TAG+drf+f"{roles_dict[1]} = \'{default_s_dt}\'")
+                                    # print(TAG+"received valid datetime. Exiting ck_uart()")
+                                    break
                             else:
                                 if my_debug:
                                     print(TAG+f"value last_req_sent: \'{last_req_sent}\' not in req_dict.keys(). Go around")
@@ -389,9 +392,6 @@ def upd_tm(show_t: bool = False):
     if clock is None:
         return -1
     try:
-        tm_hour = 3
-        tm_min = 4
-        tm_sec = 5
         dt_adjust()
 
         p_time = False
@@ -419,7 +419,7 @@ def upd_tm(show_t: bool = False):
                     clock.second_pair = sp
                     sp2  = clock.second_pair
                     time.sleep(wait)
-                    print(TAG+"Time = {}:{}".format(fp2, sp2))
+                    # print(TAG+"Time = {}:{}".format(fp2, sp2))
                 except ValueError as e:
                     print(TAG)
                     raise
@@ -526,7 +526,8 @@ def main():
                                     rtc.datetime = dts
                                     rtc_is_set = True
                                     t_check = time.localtime(time.time())
-                                    print(TAG+f"Built-in RTC is synchronized from NTP pool")
+                                    print(TAG+f"built-in RTC is synchronized from NTP pool")
+                                    print(TAG+f"new time from built-in RTC={t_check[tm_hour]}:{t_check[tm_min]}")
                                 else:
                                     print(TAG+f"result dt {dt} is invalid. len(dt)= {le}. Skipping")
                         if start:
