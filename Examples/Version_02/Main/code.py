@@ -62,20 +62,22 @@ my_ads = 0x20
 master_ads = 0x20
 target_ads = 0x25
 msg_nr = 0
-default_dt = '2022-10-06 01:15:00'
 last_req_sent = 0
 ACK_rcvd = False
 rtc = None
 rtc_is_set = False
 location = None
-default_dt = None
-default_s_dt = ''
+default_dt = time.struct_time((2022,10,10,01,15,1,283,0,-1))
+default_s_dt = "2022-10-06 01:15:00"
 unix_dt = None
 main_group = None
 clock = None
 display = board.DISPLAY
 t_start = time.monotonic()
 tz_offset = 0
+tm_year = 0
+tm_mon = 1
+tm_mday = 2
 tm_hour = 3
 tm_min = 4
 tm_sec = 5
@@ -344,13 +346,20 @@ def make_clock():
             print(TAG+f"Error: {e}")
 
 def dt_adjust():
-    global default_dt, unix_dt
+    global default_dt, default_s_dt, unix_dt
     if rtc_is_set:
         default_dt = time.localtime(time.time())
         unix_dt = time.time()
+        yy = default_dt[tm_year]
+        mm = default_dt[tm_mon]
+        dd = default_dt[tm_mday]
+        hh = default_dt[tm_hour]
+        mi = default_dt[tm_min]
+        ss = default_dt[tm_sec]
+        default_s_dt = "{:d}-{:02d}-{:02d} {:02d}:{:02d}:{:02d}".format(yy, mm, dd, hh, mi, ss)
 
 def upd_tm(show_t: bool = False):
-    global clock, default_dt, default_s_dt, hour_old, min_old
+    global clock, default_s_dt, hour_old, min_old
     TAG=tag_adj("upd_tm(): ")
     wait = 1
     ret = 1
