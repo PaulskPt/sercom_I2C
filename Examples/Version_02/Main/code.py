@@ -55,7 +55,7 @@ acknak_dict = {
 max_bytes = 2**5
 rx_buffer_len = max_bytes
 rx_buffer = bytearray(rx_buffer_len * b'\x00')
-
+rx_buffer_s = ''
 id = board.board_id
 
 my_ads = 0x20
@@ -151,7 +151,7 @@ def find_c(c):
     return f_dict
 
 def ck_uart():
-    global rx_buffer, msg_nr, my_debug, last_req_sent, my_ads, default_s_dt, unix_dt, ACK_rcvd
+    global rx_buffer, rx_buffer_s, msg_nr, my_debug, last_req_sent, my_ads, default_s_dt, unix_dt, ACK_rcvd
     TAG = tag_adj('ck_uart():  ')
     nr_bytes = 0
     delay_ms = 0.2
@@ -258,8 +258,11 @@ def ck_uart():
                             unix_dt = int(float(msg))
                             break  # Done!
             empty_buffer()
+            nr_bytes = 0
+            msg = ''
             ACK_rcvd = False
             STX_rcvd = False
+            STX_idx = 0
             time.sleep(delay_ms)
     except KeyboardInterrupt:
         nr_bytes = -1
