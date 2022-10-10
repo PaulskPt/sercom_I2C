@@ -36,7 +36,7 @@ from adafruit_displayio_flipclock.flip_clock import FlipClock
 """ Global flags """
 my_debug = False
 use_ntp = True
-use_local_time = True
+use_local_time = None
 use_flipclock = True
 use_dynamic_fading = False
 
@@ -108,24 +108,22 @@ tag_le_max = 20  # see tag_adj()
 # equal to the RX/TX serial wiring.
 uart = UART(board.SDA, board.SCL, baudrate=4800, timeout=0, receiver_buffer_size=rx_buffer_len)
 
-
 def setup():
     global rtc, esp, tz_offset, use_local_time, aio_username, aio_key, location
     TAG=tag_adj("setup(): ")
 
     if not uart:
-        print(TAG+"failed to create an instance of the UART object")
-
+        so = 'UART'
     rtc = RTC()  # create the built-in rtc object
     if not rtc:
-        print(TAG+"failed to create an instance of the RTC object")
-
+        so = 'RTC'
+    if not uart or not rtc:
+        print(TAG+f"failed to create an instane of the {so} object")
     try:
         from secrets import secrets
     except ImportError:
         print("WiFi secrets are kept in secrets.py, please add them there!")
         raise
-
     lt = secrets.get("LOCAL_TIME_FLAG", None)
     if lt is None:
         use_local_time = False
@@ -134,7 +132,6 @@ def setup():
         if my_debug:
             print("lt2=", lt2)
         use_local_time = True if lt2 == 1 else False
-
     if use_local_time:
         location = secrets.get("timezone", None)
         if location is None:
@@ -149,7 +146,6 @@ def setup():
     else:
         location = 'Etc/GMT'
         tz_offset = 0
-
     make_clock()
 
 """
@@ -210,7 +206,7 @@ def find_c(c):
    This function 'fills' the global rx_buffer with characters received.
    It checks for reception of an ACK ASCII code, being the 'acknowledge' by the device
    with the 'Sensor' role. If an ACK code is received this function will check for the
-   reception of a messag from the device with the Sensor role.
+   reception of a message from the device with the Sensor role.
    When a datetime message is received this function checks it's validity. If OK then
    it sets the global variable default_s_dt. When a message containing a unix epoch value is
    received, this function will set the global variable unix_dt.
