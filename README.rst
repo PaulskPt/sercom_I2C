@@ -138,7 +138,7 @@ The examples consist of two versions: 'Version_01' and 'Version_02'
 'Version_01': This version contains the original version of the sercom_I2C scripts.
 'Version_02': In this version 'sercom_I2C' forms an itegrated part of an 'Adafruit_DisplayIO_FlipClock' example.
 Each of the two versions consist of two scripts:: one for the device performing the role of 'Main' device. 
-The second for the device performing therole of 'Sensor' device. 
+The second for the device performing the role of 'Sensor' device. 
 These two scripts are both in a separate subfolder ('Main' and 'Sensor') in each Version subfolder Examples.
 The examples are tested on an Adafruit PyPortal Titano (in the Main role) 
 and an Unexpected Maker PROS3 (in the Sensor role).
