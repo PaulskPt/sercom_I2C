@@ -5,6 +5,7 @@
 #
 # Serial communication via I2C (alias: 'Sercom I2C')
 # This script is intendedc for the device with the 'Sensor' role, in my case an Unexpected Maker PROS3
+# Version 1
 import board
 import time
 import sys

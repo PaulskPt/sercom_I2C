@@ -4,6 +4,7 @@
 #
 # Serial communication via I2C (alias: 'Sercom I2C')
 # This script is intendedc for the device with the 'Main' role, in my case an Adafruit PyPortal Titano
+# Version 1
 import board
 import time
 import sys

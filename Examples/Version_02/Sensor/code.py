@@ -179,8 +179,7 @@ def do_connect():
     while dc_ip is None or dc_ip == '0.0.0.0':
         # print(TAG+f"cnt= {cnt}")
         try:
-            s_ssid = 'ssid1' if cnt == 0 else 'ssid2'
-            wifi.radio.connect(secrets[s_ssid], secrets["password"])
+            wifi.radio.connect(secrets["ssid"], secrets["password"])
         except ConnectionError as e:
             if cnt == 0:
                 print(TAG+"WiFi connection try: {:2d}. Error: \'{}\'\n\tTrying max {} times.".format(cnt+1, e, timeout_cnt))
@@ -198,7 +197,7 @@ def do_connect():
 
     if s_ip is not None and s_ip != '0.0.0.0':
         print(TAG+"s_ip= \'{}\'".format(s_ip))
-        print(TAG+"connected to %s!"%secrets[s_ssid])
+        print(TAG+"connected to %s!"%secrets["ssid"])
         print(TAG+"IP address is", ip)
 
         addr_idx = 0

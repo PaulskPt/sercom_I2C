@@ -1,16 +1,24 @@
  # SPDX-FileCopyrightText: Copyright (c) 2022 Tim Cocks for Adafruit Industries
-# (c) 2022 Paulus Schulinck for modifications done
+# (c) 2022 Paulus Schulinck for modifications done and for the sercom_I2C part.
 #
 # SPDX-License-Identifier: MIT
 #
-# Original filename: flipclock ... test2... PaulskPT.py
-# Adapted for sercom_I2C
+# Original filename: 'displayio_flipclock_ntp_test2_PaulskPt.py'
+# Modified to incorporate 'sercom_I2C' serial communication via I2C wires.
 # Version 2
 #
 """
     Advanced example that shows how you can use the
     FlipClock displayio object along with the adafruit_ntp library
     to show and update the current time with a FlipClock on a display.
+
+    In this example the device performing the role of 'Main' sends datetime requests
+    to another CircuitPython device performing the role of 'Sensor'. The 'Sensor'
+    sends to the 'Main' device a message containing a datetime string after being requested to.
+
+    The reason for 'moving' certain tasks to another MCU is to prevent memory memory errors.
+    The bitmapped spritesheets used in this script consume a large part of the memory available
+    in the PyPortal Titano.
 """
 
 import time
@@ -28,7 +36,7 @@ from adafruit_displayio_flipclock.flip_clock import FlipClock
 """ Global flags """
 my_debug = False
 use_ntp = True
-use_local_time = None
+use_local_time = True
 use_flipclock = True
 use_dynamic_fading = False
 
@@ -198,10 +206,15 @@ def find_c(c):
 
    :param None
    Return type: int, nr_bytes received
+
    This function 'fills' the global rx_buffer with characters received.
-   It also checks for reception of an ACK ASCII code, being the 'acknowledge' by the device
-   with the 'Sensor' role. If an ACK code is received.
-   In case of a KeyboardInterrupt during the execution of this function, thre function
+   It checks for reception of an ACK ASCII code, being the 'acknowledge' by the device
+   with the 'Sensor' role. If an ACK code is received this function will check for the
+   reception of a messag from the device with the Sensor role.
+   When a datetime message is received this function checks it's validity. If OK then
+   it sets the global variable default_s_dt. When a message containing a unix epoch value is
+   received, this function will set the global variable unix_dt.
+   In case of a KeyboardInterrupt during the execution of this function, this function
    will return a value of -1, herewith 'signalling' the called function (main())
    that a KeyboardInterrupt has occurred.
 
