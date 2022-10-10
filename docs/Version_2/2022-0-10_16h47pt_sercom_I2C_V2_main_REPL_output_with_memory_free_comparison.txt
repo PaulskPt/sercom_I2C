@@ -1,0 +1,114 @@
+Monday 2022-10-10 16h41 utc+1
+by @PaulskPt
+Platform: Unexpected Maker PROS3
+Project: sercom_I2C
+Version: 2
+Script for device with role Main
+IDE: mu-editor v 1.1.1
+
+Note: The script is doing what it is meant to do:
+ 1) send a request for datetime to the device with role Sensor
+ 2) call ck_uart() to handle the acknowledge from the device with role Sensor
+ 3) ... idem ...   handle the received datetime
+ 4) set the built-in RTC with the received datetime
+ 5) call make_clock() to prepare the PyPortal Titano flipclock display
+ 6) set the flipclock four digits: two digits (hours) for the 'first pair' and two digits (minutes) for the 'second pair'
+ 7) at a minute interval update the flipclock
+ 8) if necessary (at certain interval time) set the built-in RTC to the fresh NTP datetime;
+ 9) do some datetime conversion if necessary;
+10) continue to loop inside main().
+
+Note: below two run's of the script.
+      1) with global boolean flag 'use_dynamic_fading' = False 
+	  2) with global boolean flag 'use_dynamic_fading' = True
+	  
+	  At the end I added a table with the differences in free memory during these two runs.
+
+
+REPL output:
+
+soft reboot
+
+Auto-reload is on. Simply save files over USB to run them or enter REPL to disable.
+code.py output:
+]0;🐍code.py | 8.0.0-beta.1\
+===========================================
+DISPLAYIO.FLIPCLOCK
+USING SERCOM VIA I2C TEST FOR TIME UPDATES
+Version 2.0
+Running on an PYPORTAL_TITANO
+in the role of Main
+===========================================
+main():             going to send request for date_time to device with role: Sensor
+send_req():         request for date_time sent
+ck_uart():          message is valid
+main():             mem_free= 84640
+main():             built-in RTC is synchronized from NTP pool
+main():             new time from built-in RTC=16:47
+main():             Time elapsed: 10
+main():             Time elapsed: 20
+main():             Time elapsed: 30
+main():             going to send request for date_time to device with role: Sensor
+send_req():         request for date_time sent
+ck_uart():          timed-out. u_now= 4740.67, u_end= 4740.5
+main():             mem_free= 84464   <<<======================== Memory available without bitmapped spritesheets loaded
+                                                                  and without module cedargrove_palettefader.py 
+																  (which is loaded by Adafruit_DisplayIO_FlipClock >
+																  adafruit_displayio_flipclock > FlipDigit > __init__()
+																  In this script using palettefader is determined by the 
+																  value of the global variable 'use_dynamic_fading'.
+																  Here, in this moment the value of 'use_dynamic_fading'
+																  was 'False'
+main():             built-in RTC is synchronized from NTP pool
+main():             new time from built-in RTC=16:47
+]0;🐍Done | 8.0.0-beta.1\
+Code stopped by auto-reload. Reloading soon.
+soft reboot
+
+Auto-reload is on. Simply save files over USB to run them or enter REPL to disable.
+code.py output:
+]0;🐍code.py | 8.0.0-beta.1\
+===========================================
+DISPLAYIO.FLIPCLOCK
+USING SERCOM VIA I2C TEST FOR TIME UPDATES
+Version 2.0
+Running on an PYPORTAL_TITANO
+in the role of Main
+===========================================
+main():             Time elapsed: 10
+main():             going to send request for date_time to device with role: Sensor
+send_req():         request for date_time sent
+ck_uart():          message is valid
+main():             mem_free= 18208
+main():             built-in RTC is synchronized from NTP pool
+main():             new time from built-in RTC=16:49
+main():             Time elapsed: 20
+main():             Time elapsed: 30
+main():             going to send request for date_time to device with role: Sensor
+send_req():         request for date_time sent
+ck_uart():          message is valid
+main():             mem_free= 17984     <<<===================== Memory available with various bitmapped spritesheets loaded
+                                                    			 Here, in this moment the value of 'use_dynamic_fading'
+																 was 'True'
+
+main():             built-in RTC is synchronized from NTP pool
+main():             new time from built-in RTC=16:49
+main():             Time elapsed: 10
+
+
+Final note:
+
++-----------------------+----------------+
+| use_dynamic_fading:   |  memory free:  |
++-----------------------+----------------+
+|     False             |  84464 bytes   |
++-----------------------+----------------+
+|     True              |  17984 bytes   |
++-----------------------+----------------+
+| Memory used by        |  66480 bytes   |
+| bitmapped spritesheets|                |
++-----------------------+----------------+
+
+We are using @Foamyguy's small versions of his FlipClock bitmapped spritesheet files.
+
+

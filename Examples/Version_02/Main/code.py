@@ -18,11 +18,13 @@ from displayio import Group
 import adafruit_imageload
 from adafruit_displayio_flipclock.flip_clock import FlipClock
 
+sercom_I2C_version = 2.0
+
 my_debug = False
 use_ntp = True
 use_local_time = None
 use_flipclock = True
-use_dynamic_fading = False
+use_dynamic_fading = True
 
 _STX = const(0x02)  # Start-of-text ASCII code
 _ACK = const(0x06)  # Acknowledge ASCII code
@@ -431,6 +433,7 @@ def main():
     print('=' * 43)
     print("DISPLAYIO.FLIPCLOCK")
     print("USING SERCOM VIA I2C TEST FOR TIME UPDATES")
+    print(f"Version {sercom_I2C_version}")
     print(f"Running on an {id.upper()}")
     print(f"in the role of {f}")
     print('=' * 43)
@@ -452,7 +455,7 @@ def main():
                 if t_elap_old != t_elapsed:
                     t_elap_old = t_elapsed
                     print(TAG+f"Time elapsed: {t_elapsed}")
-            if start or (t_elapsed > 0 and t_elapsed % 60 == 0):
+            if rtc_is_set and (start or (t_elapsed > 0 and t_elapsed % 60 == 0)):
                 # At minute interval update the flipclock display
                 res = upd_tm(False)
                 if res == -1:

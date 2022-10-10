@@ -23,6 +23,8 @@ import time
 import wifi
 from collections import OrderedDict
 
+sercom_I2C_version = 2.0
+
 try:
     from secrets import secrets
 except ImportError:
@@ -718,6 +720,7 @@ def main():
     time.sleep(5) # Give user time to set up a terminal window or so
     print('=' * 36)
     print("SERCOM VIA I2C TEST")
+    print(f"Version {sercom_I2C_version}")
     print(f"Running on an {id.upper()}")
     print(f"in the role of {f}")
     print('=' * 36)
