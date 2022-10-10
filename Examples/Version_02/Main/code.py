@@ -198,20 +198,21 @@ def ck_uart():
                 print(TAG+f"rcvd data= {rx_buffer}" ,end="\n")
             if nr_bytes >0:
                 rx_buffer_s = rx_buffer.decode()
+                rx_buffer = None # Cleanup
                 #-------------------------------------------------------
                 uart.reset_input_buffer()  # Clear the uart buffer
                 #-------------------------------------------------------
                 if nr_bytes == 2 and not ACK_rcvd:
-                    ACK_rcvd = True if nr_bytes ==2 and rx_buffer[0] == 32 and rx_buffer[1]==6 else False
+                    ACK_rcvd = True if nr_bytes ==2 and ord(rx_buffer_s[0]) == 32 and ord(rx_buffer_s[1])==6 else False
                     time.sleep(delay_ms)
                     continue  # loop to receive the message
                 if nr_bytes > 2:
-                    b = int.from_bytes(rx_buffer[2:3], 'big')
+                    b = ord(rx_buffer_s[2])
                     STX_rcvd = True if b == 2 else False
                     if STX_rcvd:
                         STX_idx = 2
                     if not STX_rcvd:
-                        # If we missed it with the above equation,
+                        # If we missed it with the equation above,
                         # we have to search the whole rx_buffer
                         f_dict = find_c(_STX)
                         if isinstance(f_dict, dict):
@@ -220,13 +221,13 @@ def ck_uart():
                                 STX_idx = f_dict[0]
                                 STX_rcvd = True
                             else:
-                                # No STX or more than 1 STX code found in rx_buffer. Go around
+                                # No STX or more than 1 STX code found in rx_buffer
                                 time.sleep(delay_ms)
                                 continue  # go around
                     # Check the STX flag again. Could be changed in last lines above
                     if STX_rcvd:
                         if last_req_sent == req_rev_dict['date_time']:
-                            ads = rx_buffer[0]
+                            ads = ord(rx_buffer_s[0])
                             if ads == my_ads:
                                 msg_is_for_us = True
                             if not STX_rcvd:
@@ -234,7 +235,6 @@ def ck_uart():
                                 continue  # go around
 
                             le_msg = ord(rx_buffer_s[STX_idx -1])
-                            #print(TAG+f"le_msg= {le_msg}")
                             msg = ''
                             if len(rx_buffer_s) >= le_msg:
                                 b1 = rx_buffer_s[-3] == ':'
