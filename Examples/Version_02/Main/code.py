@@ -160,11 +160,13 @@ def ck_uart():
     STX_idx = -1
     msg_is_for_us = False
     t_buf = None
-
+    ck_art_loopnr = 0
 
     try:
         empty_buffer()  # clear the rx_buffer
         while True:
+            # ck_art_loopnr += 1
+            # print(TAG+f"loop nr= {ck_art_loopnr}")
             u_now = time.monotonic()
             if u_now > u_end:
                 print(TAG+f"timed-out. u_now= {u_now}, u_end= {u_end}")
@@ -178,93 +180,116 @@ def ck_uart():
                 time.sleep(delay_ms)
                 continue  # Go around
             if not nr_bytes:
-                if not my_debug:
-                    print(TAG+f"nr_bytes received={nr_bytes}")
                 time.sleep(delay_ms)
                 continue  # Go around
             if not my_debug:
                 print(TAG+f"nr of bytes received= {nr_bytes}")
-                print(TAG+f"type(rx_buffer)={type(rx_buffer)}")
-                rd = "{}".format(rx_buffer)
-                print(TAG+f"rcvd data= {rd}" ,end="\n")
+                # print(TAG+f"type(rx_buffer)={type(rx_buffer)}")
+                print(TAG+f"rcvd data= {rx_buffer}" ,end="\n")
             if nr_bytes >0:
                 #-------------------------------------------------------
                 uart.reset_input_buffer()  # Clear the uart buffer
                 #-------------------------------------------------------
                 if nr_bytes == 2 and not ACK_rcvd:
-                    f_dict = find_c(_ACK) # find occurrence of ACK
-                    if isinstance(f_dict, dict):
-                        le = len(f_dict)
-                        if le == 1 and f_dict[0] == 1:
-                            ACK_rcvd = True
-                        elif le > 1:
-                            print(TAG+f"found {le} ACK codes in rx_buffer. Expected only one. Skipping 2 and more")
-                        else:
-                            # no ACK received. Go around
-                            pass
-                        if ACK_rcvd:
+                    ACK_rcvd = True if nr_bytes ==2 and rx_buffer[0] == 32 and rx_buffer[1]==6 else False
+                    if ACK_rcvd:
+                        if my_debug:
                             print(TAG+f"ACK code received from {roles_dict[1]}")
                             print(TAG+"waiting for reception of the message...")
+                            continue
+                    else:
                         time.sleep(delay_ms)
                         continue  # loop to receive the message
-                f_dict = find_c(_STX)
-                if isinstance(f_dict, dict):
-                    le = len(f_dict)
-                    if le == 1 and f_dict[0] == 2:
-                        STX_idx = f_dict[0]
-                        STX_rcvd = True
-                    elif le > 1:
-                        print(TAG+f"found {le} STX codes in rx_buffer. Expected only one. Skipping 2 and more")
-                    else:
-                        # No STX code found in rx_buffer.
-                        time.sleep(delay_ms)
-                        continue  # go around
+                if nr_bytes > 2:
+                    # This assumes that the STX code is in position 2 in rx_buffer
+                    # that could be different if characters have been missed.
+                    # print(TAG+f"value rx_buffer[2:3] = {rx_buffer[2:3]}")
+                    b = int.from_bytes(rx_buffer[2:3], 'big')
+                    # print(TAG+f"b= {b}")
+                    STX_rcvd = True if b == 2 else False
+                    # print(TAG+f"value STX_rcvd (checked in rx_buffer) = {STX_rcvd}")
                     if STX_rcvd:
-                        print(TAG+f"STX code received from {roles_dict[1]}")
-                if last_req_sent == req_rev_dict['date_time']:
-                    ads = rx_buffer[0]
-                    if ads == my_ads:
-                        msg_is_for_us = True
-                    s = "" if msg_is_for_us else " not"
-                    print(TAG+f"the received message is{s} addressed to device with role: \'{roles_dict[0]}\'")
-                    s_ads = "0x{:x}".format(ads)
-                    print(TAG+f"received address: {s_ads}")
-                    le_msg = rx_buffer[STX_idx -1]
-                    print(TAG+f"received value for msg length= {le_msg}")
-                    msg = ''
-                    t_buf = rx_buffer[STX_idx+1:STX_idx+1+le_msg]
-                    # the length sent with the msg (le_msg) can be different from the length
-                    # calculated here (le), in case the UART missed one or more characters!
-                    le = len(t_buf)
-                    if le != le_msg:
-                        print(TAG+"received message is invalid:")
-                        print(TAG+f"received msg length: {le_msg}. Actual measured msg length= {le}")
-                        continue  # go around
-                    for i in range(le):
-                        msg += chr(t_buf[i])
-                    if last_req_sent in req_dict.keys():
-                        s_req = req_dict[last_req_sent]
-                        if s_req == 'date_time':
-                            #-------------------------------------------------
-                            default_s_dt = msg    # Global datetime var set
-                            #-------------------------------------------------
-                            vrf = default_s_dt  # vrf stands for variable received from
-                            s_vrf = 'default_s_dt'
-                        elif s_req == 'unix_time':
-                            unix_dt = msg
-                            vrf = unix_dt
-                            s_vrf = 'unix_dt'
-                        drf = s_req+" received from "
-                    else:
-                        print(TAG+f"value last_req_sent: \'{last_req_sent}\' not in req_dict.keys(). Go around")
-                        continue # go around
-                    break
-            else:
-                empty_buffer()  # create a new instance of the rx_buffer (bytearray)
-                time.sleep(delay_ms)
-                continue  # go around
+                        STX_idx = 2
+                    if not STX_rcvd:
+                        # If we missed it with the above equation,
+                        # we have to search the whole rx_buffer
+                        f_dict = find_c(_STX)
+                        if isinstance(f_dict, dict):
+                            le = len(f_dict)
+                            if le == 1 and f_dict[0] == 2:
+                                STX_idx = f_dict[0]
+                                STX_rcvd = True
+                            else:
+                                # No STX or more than 1 STX code found in rx_buffer. Go around
+                                time.sleep(delay_ms)
+                                continue  # go around
+                    # Check the STX flag again. Could be changed in last lines above
+                    if STX_rcvd:
+                        if not my_debug:
+                            print(TAG+f"STX code received from {roles_dict[1]}")
+                        if last_req_sent == req_rev_dict['date_time']:
+                            ads = rx_buffer[0]
+                            if ads == my_ads:
+                                msg_is_for_us = True
+                            if my_debug:
+                                s = "" if msg_is_for_us else " not"
+                                print(TAG+f"the received message is{s} addressed to device with role: \'{roles_dict[0]}\'")
+                                s_ads = "0x{:x}".format(ads)
+                                print(TAG+f"received address: {s_ads}")
+                            if not STX_rcvd:
+                                time.sleep(delay_ms)
+                                continue  # go around
+                            le_msg = rx_buffer[STX_idx -1]
+                            if not my_debug:
+                                print(TAG+f"received value for msg length= {le_msg}")
+                            msg = ''
+                            t_buf = rx_buffer[STX_idx+1:STX_idx+1+le_msg]
+                            # the length sent with the msg (le_msg) can be different from the length
+                            # calculated here (le), in case the UART missed one or more characters!
+                            le = len(t_buf)
+                            if le != le_msg:
+                                if not my_debug:
+                                    print(TAG+"received message is invalid:")
+                                    print(TAG+f"received msg length: {le_msg}. Actual measured msg length= {le}")
+                                    #raise RuntimeError
+                                #time.sleep(delay_ms)
+                                #continue  # go around
+                            for i in range(le):
+                                msg += chr(t_buf[i])
+                            if last_req_sent in req_dict.keys():
+                                s_req = req_dict[last_req_sent]
+                                # print(TAG+f"s_req= \'{s_req}\'")
+                                if s_req == 'date_time':
+                                    #-------------------------------------------------
+                                    default_s_dt = msg    # Global datetime var set
+                                    #-------------------------------------------------
+                                    vrf = default_s_dt  # vrf stands for variable received from
+                                    s_vrf = 'default_s_dt'
+                                elif s_req == 'unix_time':
+                                    unix_dt = msg
+                                    vrf = unix_dt
+                                    s_vrf = 'unix_dt'
+                                drf = s_req+" received from "
+                                if my_debug:
+                                    print(TAG+drf+f"{roles_dict[1]} = \'{default_s_dt}\', type(default_S_dt)= {type(default_s_dt)}")
+                                    print(TAG+f"length of datetime= {le_msg}")
+                                else:
+                                    print(TAG+drf+f"{roles_dict[1]} = \'{default_s_dt}\'")
+                                # print(TAG+"received valid datetime. Exiting ck_uart()")
+                                break
+                            else:
+                                if my_debug:
+                                    print(TAG+f"value last_req_sent: \'{last_req_sent}\' not in req_dict.keys(). Go around")
+                                #continue # go around
+            #else:
+            empty_buffer()  # create a new instance of the rx_buffer (bytearray)
+            ACK_rcvd = False
+            STX_rcvd = False
+            time.sleep(delay_ms)
+            #continue  # go around
     except KeyboardInterrupt:
         nr_bytes = -1
+    # print(TAG+f"Exit ck_uart(). nr_bytes= {nr_bytes}")
     return nr_bytes
 
 def send_req(c):
