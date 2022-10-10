@@ -82,6 +82,7 @@ tm_sec = 5
 hour_old = 0
 min_old = 0
 tag_le_max = 20  # see tag_adj()
+has_cln = False
 
 uart = UART(board.SDA, board.SCL, baudrate=4800, timeout=0, receiver_buffer_size=rx_buffer_len)
 
@@ -168,7 +169,8 @@ def ck_uart():
     ck_art_loopnr = 0
     cln = ''
     msg_valid = False
-
+    b1 = b2 = b3 = b4 = False
+    has_tc = False
     try:
         empty_buffer()  # clear the rx_buffer
         while True:
@@ -230,15 +232,24 @@ def ck_uart():
                             if not STX_rcvd:
                                 time.sleep(delay_ms)
                                 continue  # go around
-                            le_msg = rx_buffer[STX_idx -1]
-                            msg = ''
 
+                            le_msg = ord(rx_buffer_s[STX_idx -1])
+                            #print(TAG+f"le_msg= {le_msg}")
+                            msg = ''
                             if len(rx_buffer_s) >= le_msg:
-                                cln = rx_buffer_s[-3]
-                                msg_valid = True if STX_rcvd and cln == ':' else False
-                                s = 'message is{} valid'.format('' if msg_valid else ' not')
+                                b1 = rx_buffer_s[-3] == ':'
+                                b2 = rx_buffer_s[-6] == ':'
+                                b3 = rx_buffer_s[-12] == '-'
+                                b4 = rx_buffer_s[-15] == '-'
+                                #print(TAG+f"bool 1= {b1}, 2= {b2}, 3= {b3}, 4= {b4}")
+                                has_tc = True if b1 and b2 and b3 and b4 else False
+                                #print(TAG+f"STX_rcvd= {STX_rcvd}")
+                                msg_valid = True if STX_rcvd and has_tc else False
+                                s = "message is{} valid".format('' if msg_valid else ' not')
                                 print(TAG+s)
-                                msg = rx_buffer_s[STX_idx+1:STX_idx+1+le_msg]
+                                b_start = STX_idx + 1
+                                b_end = b_start + le_msg
+                                msg = rx_buffer_s[b_start : b_end]
                                 if last_req_sent in req_dict.keys():
                                     s_req = req_dict[last_req_sent]
                                     if s_req == 'date_time':
