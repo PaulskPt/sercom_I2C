@@ -1,7 +1,7 @@
 Sunday 2022-10-09 23h55 utc+1
 by @PaulskPt
-Platform: Unexpected Maker PROS3
-Project: sercom_I2C
+Platform: Adafruit PyPortal Titano
+Project: Adafruit_DisplayIO_FlipClock with sercom_I2C
 Version: 2
 Script for device with role Main
 IDE: mu-editor v 1.1.1
