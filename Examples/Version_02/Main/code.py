@@ -1,4 +1,4 @@
- # SPDX-FileCopyrightText: Copyright (c) 2022 Tim Cocks for Adafruit Industries
+# SPDX-FileCopyrightText: Copyright (c) 2022 Tim Cocks for Adafruit Industries
 # (c) 2022 Paulus Schulinck for modifications done and for the sercom_I2C part.
 #
 # SPDX-License-Identifier: MIT
@@ -9,6 +9,8 @@
 #
 import time
 import gc
+import os
+#import dotenv
 import sys
 import board
 from rtc import RTC
@@ -443,27 +445,28 @@ def main():
     dt = None
     gc.collect()
     if id.find('pros3') >= 0:
-            f = roles_dict[1]
+            role = roles_dict[1]
     elif id.find('titano') >= 0:
-        f = roles_dict[0]
+        role = roles_dict[0]
     time.sleep(5) # Give user time to set up a terminal window or so
     print()
-    print('=' * 43)
-    print("DISPLAYIO.FLIPCLOCK")
-    print("USING SERCOM VIA I2C TEST FOR TIME UPDATES")
+    print('=' * 36)
+    print("Adafruit_DisplayIO_FlipClock")
+    print("using SerCom via I2C")
     print(f"Version {sercom_I2C_version}")
     print(f"Running on an {id.upper()}")
-    print(f"in the role of {f}")
-    print('=' * 43)
+    print(f"in the role of {role}")
+    print('=' * 36)
+
     setup()
-    t_elapsed = 0
-    t_curr = time.monotonic()
-    t_interval = 30 # in the future set to 600 (10 minutes)
     res = 0
     start = True
     t_shown = False
     t_elap_old = 0
     stop = False
+    t_elapsed = 0
+    t_curr = time.monotonic()
+    t_interval = 30 # in the future set to 600 (10 minutes)
 
     try:
         while True:
@@ -489,6 +492,7 @@ def main():
                 if res == -1:
                     stop = True
                     break
+                gc.collect()
                 nr_bytes = ck_uart()  # Check and handle incoming requests and control codes
                 if nr_bytes == -1:
                     stop = True
@@ -507,7 +511,7 @@ def main():
                                     rtc_is_set = True
                                     t_check = time.localtime(time.time())
                                     print(TAG+f"built-in RTC is synchronized from NTP pool")
-                                    print(TAG+f"new time from built-in RTC={t_check[tm_hour]}:{t_check[tm_min]}")
+                                    print(TAG+"new time from built-in RTC={:02d}:{:02d}".format(t_check[tm_hour], t_check[tm_min]))
                                 else:
                                     print(TAG+f"result dt {dt} is invalid. len(dt)= {le}. Skipping")
                         if start:
