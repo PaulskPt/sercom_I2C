@@ -429,15 +429,19 @@ def upd_tm(show_t: bool = False):
     return ret
 
 def dtstr_to_stru():
-    global default_dt
-    ret = None
+    global default_s_dt
+    TAG=tag_adj("dtstr_to_stru(): ")
+    ret = ()
     if isinstance(default_s_dt, str):
         s = default_s_dt
         le = len(s)
-        if le > 0:
-            # string in form 'yyyy-mm-dd hh:mm:ss'
-            #ret= (yy,         mo,          dd,           hh,            mi,            ss,         wd, yd, isdst)
-            ret = (int(s[:4]), int(s[5:7]), int(s[8:10]), int(s[11:13]), int(s[14:16]), int(s[17:]), 0, 0, -1 )
+        if le > 0 and le <= 19:
+            try:
+                # string in form 'yyyy-mm-dd hh:mm:ss'
+                #ret= (yy,         mo,          dd,           hh,            mi,            ss,         wd, yd, isdst)
+                ret = (int(s[:4]), int(s[5:7]), int(s[8:10]), int(s[11:13]), int(s[14:16]), int(s[17:]), 0, 0, -1 )
+            except ValueError as e:
+                print(TAG+f"Error = {e}")
     return ret
 
 def tag_adj(t):
@@ -514,11 +518,17 @@ def main():
                 if isinstance(default_s_dt, str):
                     if len(default_s_dt) > 0:
                         if not rtc_is_set:
-                            dts = time.struct_time(dtstr_to_stru())
-                            rtc.datetime = dts
-                            rtc_is_set = True
-                            t_check = time.localtime(time.time())
-                            print(TAG+f"Built-in RTC is synchronized from NTP pool")
+                            dt = dtstr_to_stru()
+                            if isinstance(dt, tuple):
+                                le = len(dt)
+                                if le == 9:
+                                    dts = time.struct_time(dt)
+                                    rtc.datetime = dts
+                                    rtc_is_set = True
+                                    t_check = time.localtime(time.time())
+                                    print(TAG+f"Built-in RTC is synchronized from NTP pool")
+                                else:
+                                    print(TAG+f"result dt {dt} is invalid. len(dt)= {le}. Skipping")
                         if start:
                             res = upd_tm(True)
                         else:
