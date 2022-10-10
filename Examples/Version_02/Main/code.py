@@ -125,7 +125,7 @@ def setup():
     make_clock()
 
 def find_c(c):
-    global rx_buffer
+    global rx_buffer_s
     f_dict = {}
     c2 = ''
     o_cnt = 0
@@ -135,7 +135,7 @@ def find_c(c):
         c2 = chr(c)
     elif type(c) is str:
         c2 = c
-    rx_buffer_s = rx_buffer.decode()
+    #rx_buffer_s = rx_buffer.decode()
     if c == _ACK or c == _STX:
         n = rx_buffer_s.find(c2)
         if n >= 0:
@@ -169,6 +169,7 @@ def ck_uart():
     ck_art_loopnr = 0
     cln = ''
     msg_valid = False
+    b_start = b_end = 0
     b1 = b2 = b3 = b4 = False
     has_tc = False
     try:
@@ -193,7 +194,7 @@ def ck_uart():
             if not nr_bytes:
                 time.sleep(delay_ms)
                 continue  # Go around
-            if my_debug:
+            if not my_debug:
                 print(TAG+f"nr of bytes received= {nr_bytes}")
                 print(TAG+f"rcvd data= {rx_buffer}" ,end="\n")
             if nr_bytes >0:
@@ -226,6 +227,10 @@ def ck_uart():
                                 continue  # go around
                     # Check the STX flag again. Could be changed in last lines above
                     if STX_rcvd:
+                        le_msg = ord(rx_buffer_s[STX_idx -1])
+                        b_start = STX_idx + 1
+                        b_end = b_start + le_msg
+                        msg = rx_buffer_s[b_start : b_end]
                         if last_req_sent == req_rev_dict['date_time']:
                             ads = ord(rx_buffer_s[0])
                             if ads == my_ads:
@@ -233,32 +238,25 @@ def ck_uart():
                             if not STX_rcvd:
                                 time.sleep(delay_ms)
                                 continue  # go around
-
-                            le_msg = ord(rx_buffer_s[STX_idx -1])
-                            msg = ''
                             if len(rx_buffer_s) >= le_msg:
                                 b1 = rx_buffer_s[-3] == ':'
                                 b2 = rx_buffer_s[-6] == ':'
                                 b3 = rx_buffer_s[-12] == '-'
                                 b4 = rx_buffer_s[-15] == '-'
-                                #print(TAG+f"bool 1= {b1}, 2= {b2}, 3= {b3}, 4= {b4}")
                                 has_tc = True if b1 and b2 and b3 and b4 else False
-                                #print(TAG+f"STX_rcvd= {STX_rcvd}")
                                 msg_valid = True if STX_rcvd and has_tc else False
                                 s = "message is{} valid".format('' if msg_valid else ' not')
                                 print(TAG+s)
-                                b_start = STX_idx + 1
-                                b_end = b_start + le_msg
-                                msg = rx_buffer_s[b_start : b_end]
                                 if last_req_sent in req_dict.keys():
                                     s_req = req_dict[last_req_sent]
                                     if s_req == 'date_time':
                                         #-------------------------------------------------
                                         default_s_dt = msg    # Global datetime var set
                                         #-------------------------------------------------
-                                    elif s_req == 'unix_time':
-                                        unix_dt = msg
-                                    break  # Done!
+                                        break  # Done!
+                        if last_req_sent == req_rev_dict['unix_time']:
+                            unix_dt = int(float(msg))
+                            break  # Done!
             empty_buffer()
             ACK_rcvd = False
             STX_rcvd = False
@@ -273,10 +271,7 @@ def send_req(c):
     n = 0
     try:
         if isinstance(c, int):
-            if c in req_dict.keys():
-                c_txt = req_dict[c]
-            else:
-                c_txt = 'unknown'
+            if c not in req_dict.keys():
                 return n  # Exit. Cannot send non existing request code.
             b = bytearray(2)
             b[0] = target_ads  # Address of 'destination'
@@ -286,7 +281,7 @@ def send_req(c):
                 print(TAG+f"failed to send request: {c}")
             elif n > 0:
                 last_req_sent = c  # remember last request code sent
-                s = TAG+"request for {} sent".format(req_dict[c])
+                s = TAG+"request for \'{}\' sent".format(req_dict[c])
                 print(s)  # Always inform user with send result
     except KeyboardInterrupt:
         n = -1
