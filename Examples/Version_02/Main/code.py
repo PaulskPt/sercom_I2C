@@ -71,7 +71,6 @@ default_s_dt = "2022-10-10 01:15:00"
 hour_old = 0
 min_old = 0
 tag_le_max = 20  # see tag_adj()
-has_cln = False
 msg_valid=None
 
 uart = UART(board.SDA, board.SCL, baudrate=4800, timeout=0, receiver_buffer_size=rx_buffer_len)
@@ -113,27 +112,28 @@ def ck_uart():
     cln = ''
     b_start = b_end = 0
     b1 = False
-    has_tc = False
+    msg_valid = False
     try:
         empty_buffer()  # clear the rx_buffer
         while True:
             u_now = time.monotonic()
             if u_now > u_end:
-                print(TAG+f"timed-out. u_now= {u_now}, u_end= {u_end}")
-                return 0  # timeout
+                print(TAG+"timed-out")  # u_now= {u_now}, u_end= {u_end}")
+                nr_bytes = 0  # timeout
+                break
             #-----------------------------------------------------
             rx_buffer = uart.read(rx_buffer_len)  # Reception here
             #-----------------------------------------------------
             if rx_buffer is None:
-                time.sleep(0.2)
+                time.sleep(delay_ms)
                 continue  # Go around
             nr_bytes = len(rx_buffer)
             if nr_bytes is None:
                 time.sleep(delay_ms)
-                continue  # Go around
+                continue
             if not nr_bytes:
                 time.sleep(delay_ms)
-                continue  # Go around
+                continue
             if not my_debug:
                 print(TAG+f"nr of bytes received= {nr_bytes}")
                 print(TAG+f"rcvd data= {rx_buffer}" ,end="\n")
@@ -160,25 +160,28 @@ def ck_uart():
                         b_start = STX_idx + 1
                         b_end = b_start + le_msg
                         msg = rx_buffer_s[b_start : b_end]
-                        if last_req_sent == req_rev_dict['date_time']:
-                            ads = ord(rx_buffer_s[0])
-                            if ads == my_ads:
+                        ads = ord(rx_buffer_s[0])
+                        if ads == my_ads:
+                            if last_req_sent == req_rev_dict['date_time']:
                                 if len(rx_buffer_s) >= le_msg:
-                                    b1 = rx_buffer_s[-3] == ':' and rx_buffer_s[-6] == ':' and rx_buffer_s[-12] == '-' and rx_buffer_s[-15] == '-'
-                                    has_tc = True if b1 else False
-                                    msg_valid = True if STX_rcvd and has_tc else False
+                                    msg_valid = rx_buffer_s[-3] == ':' and rx_buffer_s[-6] == ':' and rx_buffer_s[-12] == '-' and rx_buffer_s[-15] == '-'
                                     s = "message is{} valid".format('' if msg_valid else ' not')
                                     print(TAG+s)
-                                    if last_req_sent in req_dict.keys():
-                                        s_req = req_dict[last_req_sent]
-                                        if s_req == 'date_time':
-                                            #-------------------------------------------------
-                                            default_s_dt = msg    # Global datetime var set
-                                            #-------------------------------------------------
-                                            break  # Done!
-                        if last_req_sent == req_rev_dict['unix_time']:
-                            unix_dt = int(float(msg))
-                            break  # Done!
+                                    if msg_valid:
+                                        #-------------------------------------------------
+                                        default_s_dt = msg    # Global datetime var set
+                                        #-------------------------------------------------
+                                        break  # Done!
+                                    else:
+                                        nr_bytes = 0
+                                        break
+                                else:
+                                    time.sleep(delay_ms)
+                                    continue
+                            if last_req_sent == req_rev_dict['unix_time']:
+                                msg_valid = True
+                                unix_dt = int(float(msg))
+                                break  # Done!
             empty_buffer()
             nr_bytes = 0
             msg = ''
