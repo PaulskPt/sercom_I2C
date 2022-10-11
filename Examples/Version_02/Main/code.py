@@ -128,32 +128,6 @@ def setup():
         tz_offset = 0
     make_clock()
 
-def find_c(c):
-    global rx_buffer_s
-    f_dict = {}
-    c2 = ''
-    o_cnt = 0
-    if c is None:
-        return 0
-    if type(c) is int:
-        c2 = chr(c)
-    elif type(c) is str:
-        c2 = c
-    #rx_buffer_s = rx_buffer.decode()
-    if c == _ACK or c == _STX:
-        n = rx_buffer_s.find(c2)
-        if n >= 0:
-            f_dict[o_cnt] = n
-    else:
-        le = len(rx_buffer_s)
-        if le > 0:
-            ret = rx_buffer_s.count(c2)
-            for i in range(le):
-                if rx_buffer_s[i] == c2:
-                    f_dict[o_cnt] = i
-                    o_cnt += 1
-    return f_dict
-
 def ck_uart():
     global rx_buffer, rx_buffer_s, msg_nr, my_debug, last_req_sent, my_ads, default_s_dt, unix_dt, ACK_rcvd
     TAG = tag_adj('ck_uart():  ')

@@ -1,0 +1,74 @@
+Monday 2022-10-11 01h38 utc+1
+by @PaulskPt
+Platform: Adafruit PyPortal Titano
+Project: Adafruit_DisplayIO_FlipClock with sercom_I2C
+Version: 2
+Script for device with role Main
+IDE: mu-editor v 1.1.1
+
+Note: The script is doing what it is meant to do:
+ 1) send a request for datetime to the device with role Sensor
+ 2) call ck_uart() to handle the acknowledge from the device with role Sensor
+ 3) ... idem ...   handle the received datetime
+ 4) set the built-in RTC with the received datetime
+ 5) call make_clock() to prepare the PyPortal Titano flipclock display
+ 6) set the flipclock four digits: two digits (hours) for the 'first pair' and two digits (minutes) for the 'second pair'
+ 7) at a minute interval update the flipclock
+ 8) if necessary (at certain interval time) set the built-in RTC to the fresh NTP datetime;
+ 9) do some datetime conversion if necessary;
+10) continue to loop inside main().
+
+
+REPL output:
+
+
+soft reboot
+
+Auto-reload is on. Simply save files over USB to run them or enter REPL to disable.
+code.py output:
+]0;🐍code.py | 8.0.0-beta.1\
+====================================
+Adafruit_DisplayIO_FlipClock
+using SerCom via I2C
+Version 2.0
+Running on an PYPORTAL_TITANO
+in the role of Main
+====================================
+main():             going to send request for date_time to device with role: Sensor
+send_req():         request for 'date_time' sent
+ck_uart():          nr of bytes received= 2
+ck_uart():          rcvd data= b' \x06'
+ck_uart():          nr of bytes received= 22
+ck_uart():          rcvd data= b' \x13\x022022-10-11 01:38:53'
+ck_uart():          message is valid
+main():             mem_free= 17888
+main():             built-in RTC is synchronized from NTP pool
+main():             new time from built-in RTC=01:38
+main():             Time elapsed: 10
+main():             Time elapsed: 20
+main():             Time elapsed: 30
+main():             Time elapsed: 40
+main():             Time elapsed: 50
+main():             Time elapsed: 60
+main():             going to send request for date_time to device with role: Sensor
+send_req():         request for 'date_time' sent
+ck_uart():          nr of bytes received= 2
+ck_uart():          rcvd data= b' \x06'
+ck_uart():          nr of bytes received= 1
+ck_uart():          rcvd data= b' '
+ck_uart():          nr of bytes received= 19
+ck_uart():          rcvd data= b'2022-10-11 01:39:55'
+ck_uart():          timed-out. u_now= 37091.3, u_end= 37091.1
+main():             mem_free= 17712
+main():             built-in RTC is synchronized from NTP pool
+main():             new time from built-in RTC=01:39
+main():             Time elapsed: 30
+main():             Time elapsed: 40
+main():             Time elapsed: 50
+main():             Time elapsed: 60
+main():             going to send request for date_time to device with role: Sensor
+
+
+
+
+
