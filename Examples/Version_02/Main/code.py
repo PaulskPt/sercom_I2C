@@ -24,7 +24,6 @@ sercom_I2C_version = 2.0
 
 my_debug = False
 use_ntp = True
-use_local_time = None
 use_flipclock = True
 use_dynamic_fading = True
 
@@ -63,26 +62,17 @@ id = board.board_id
 my_ads = 0x20
 master_ads = 0x20
 target_ads = 0x25
-msg_nr = 0
 last_req_sent = 0
 ACK_rcvd = False
 rtc = None
 rtc_is_set = False
-location = None
-default_dt = time.struct_time((2022,10,10,01,15,1,283,0,-1))
-default_s_dt = "2022-10-06 01:15:00"
 unix_dt = None
 main_group = None
 clock = None
 display = board.DISPLAY
 t_start = time.monotonic()
-tz_offset = 0
-tm_year = 0
-tm_mon = 1
-tm_mday = 2
-tm_hour = 3
-tm_min = 4
-tm_sec = 5
+default_dt = time.struct_time((2022,10,10,1,15,1,283,0,-1))
+default_s_dt = "2022-10-10 01:15:00"
 hour_old = 0
 min_old = 0
 tag_le_max = 20  # see tag_adj()
@@ -91,7 +81,7 @@ has_cln = False
 uart = UART(board.SDA, board.SCL, baudrate=4800, timeout=0, receiver_buffer_size=rx_buffer_len)
 
 def setup():
-    global rtc, tz_offset, use_local_time, location
+    global rtc
     TAG=tag_adj("setup(): ")
 
     if not uart:
@@ -106,30 +96,11 @@ def setup():
     except ImportError:
         print("WiFi secrets are kept in secrets.py, please add them there!")
         raise
-    lt = secrets.get("LOCAL_TIME_FLAG", None)
-    if lt is None:
-        use_local_time = False
-    else:
-        lt2 = int(lt)
-        use_local_time = True if lt2 == 1 else False
-    if use_local_time:
-        location = secrets.get("timezone", None)
-        if location is None:
-            location = 'Not set'
-            tz_offset = 0
-        else:
-            tz_offset0 = secrets.get("tz_offset", None)
-            if tz_offset0 is None:
-                tz_offset = 0
-            else:
-                tz_offset = int(tz_offset0)
-    else:
-        location = 'Etc/GMT'
-        tz_offset = 0
+
     make_clock()
 
 def ck_uart():
-    global rx_buffer, rx_buffer_s, msg_nr, my_debug, last_req_sent, my_ads, default_s_dt, unix_dt, ACK_rcvd
+    global rx_buffer, rx_buffer_s, my_debug, last_req_sent, my_ads, default_s_dt, unix_dt, ACK_rcvd
     TAG = tag_adj('ck_uart():  ')
     nr_bytes = 0
     delay_ms = 0.2
@@ -142,7 +113,6 @@ def ck_uart():
     ACK_rcvd = False
     STX_rcvd = False
     STX_idx = -1
-    msg_is_for_us = False
     t_buf = None
     cln = ''
     msg_valid = False
@@ -198,7 +168,6 @@ def ck_uart():
                         if last_req_sent == req_rev_dict['date_time']:
                             ads = ord(rx_buffer_s[0])
                             if ads == my_ads:
-                                msg_is_for_us = True
                                 if len(rx_buffer_s) >= le_msg:
                                     b1 = rx_buffer_s[-3] == ':' and rx_buffer_s[-6] == ':' and rx_buffer_s[-12] == '-' and rx_buffer_s[-15] == '-'
                                     has_tc = True if b1 else False
@@ -303,16 +272,12 @@ def make_clock():
 
 def dt_adjust():
     global default_dt, default_s_dt, unix_dt
+
     if rtc_is_set:
-        default_dt = time.localtime(time.time())
+        dt = time.localtime(time.time())
         unix_dt = time.time()
-        yy = default_dt[tm_year]
-        mm = default_dt[tm_mon]
-        dd = default_dt[tm_mday]
-        hh = default_dt[tm_hour]
-        mi = default_dt[tm_min]
-        ss = default_dt[tm_sec]
-        default_s_dt = "{:d}-{:02d}-{:02d} {:02d}:{:02d}:{:02d}".format(yy, mm, dd, hh, mi, ss)
+        default_dt = dt
+        default_s_dt = "{:d}-{:02d}-{:02d} {:02d}:{:02d}:{:02d}".format(dt[0], dt[1], dt[2], dt[3], dt[4], dt[5])
 
 def upd_tm(show_t: bool = False):
     global clock, default_s_dt, hour_old, min_old
@@ -465,7 +430,7 @@ def main():
                                     rtc_is_set = True
                                     t_check = time.localtime(time.time())
                                     print(TAG+f"built-in RTC is synchronized from NTP pool")
-                                    print(TAG+"new time from built-in RTC={:02d}:{:02d}".format(t_check[tm_hour], t_check[tm_min]))
+                                    print(TAG+"new time from built-in RTC={:02d}:{:02d}".format(t_check[3], t_check[4]))
                                 else:
                                     print(TAG+f"result dt {dt} is invalid. len(dt)= {le}. Skipping")
                         if start:
