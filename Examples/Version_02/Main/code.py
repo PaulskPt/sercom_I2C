@@ -170,17 +170,14 @@ def ck_uart():
     STX_idx = -1
     msg_is_for_us = False
     t_buf = None
-    ck_art_loopnr = 0
     cln = ''
     msg_valid = False
     b_start = b_end = 0
-    b1 = b2 = b3 = b4 = False
+    b1 = False
     has_tc = False
     try:
         empty_buffer()  # clear the rx_buffer
         while True:
-            # ck_art_loopnr += 1
-            # print(TAG+f"loop nr= {ck_art_loopnr}")
             u_now = time.monotonic()
             if u_now > u_end:
                 print(TAG+f"timed-out. u_now= {u_now}, u_end= {u_end}")
@@ -202,33 +199,22 @@ def ck_uart():
                 print(TAG+f"nr of bytes received= {nr_bytes}")
                 print(TAG+f"rcvd data= {rx_buffer}" ,end="\n")
             if nr_bytes >0:
-                rx_buffer_s = rx_buffer.decode()
+                rx_buffer_s = rx_buffer.decode() # convert to a buffer of strings
                 rx_buffer = None # Cleanup
                 #-------------------------------------------------------
                 uart.reset_input_buffer()  # Clear the uart buffer
                 #-------------------------------------------------------
                 if nr_bytes == 2 and not ACK_rcvd:
-                    ACK_rcvd = True if nr_bytes ==2 and ord(rx_buffer_s[0]) == 32 and ord(rx_buffer_s[1])==6 else False
+                    ACK_rcvd = True if nr_bytes ==2 and (rx_buffer_s.find(chr(_ACK)) == 1) else False
+                    # print(TAG+f"ACK_rcvd= {ACK_rcvd}")
                     time.sleep(delay_ms)
                     continue  # loop to receive the message
                 if nr_bytes > 2:
-                    b = ord(rx_buffer_s[2])
-                    STX_rcvd = True if b == 2 else False
-                    if STX_rcvd:
-                        STX_idx = 2
                     if not STX_rcvd:
-                        # If we missed it with the equation above,
-                        # we have to search the whole rx_buffer
-                        f_dict = find_c(_STX)
-                        if isinstance(f_dict, dict):
-                            le = len(f_dict)
-                            if le == 1 and f_dict[0] == 2:
-                                STX_idx = f_dict[0]
-                                STX_rcvd = True
-                            else:
-                                # No STX or more than 1 STX code found in rx_buffer
-                                time.sleep(delay_ms)
-                                continue  # go around
+                        STX_rcvd = True if rx_buffer_s.find(chr(_STX)) == 2 else False
+                        # print(TAG+f"STX_rcvd= {STX_rcvd}")
+                        if STX_rcvd:
+                            STX_idx = 2
                     # Check the STX flag again. Could be changed in last lines above
                     if STX_rcvd:
                         le_msg = ord(rx_buffer_s[STX_idx -1])
@@ -239,25 +225,19 @@ def ck_uart():
                             ads = ord(rx_buffer_s[0])
                             if ads == my_ads:
                                 msg_is_for_us = True
-                            if not STX_rcvd:
-                                time.sleep(delay_ms)
-                                continue  # go around
-                            if len(rx_buffer_s) >= le_msg:
-                                b1 = rx_buffer_s[-3] == ':'
-                                b2 = rx_buffer_s[-6] == ':'
-                                b3 = rx_buffer_s[-12] == '-'
-                                b4 = rx_buffer_s[-15] == '-'
-                                has_tc = True if b1 and b2 and b3 and b4 else False
-                                msg_valid = True if STX_rcvd and has_tc else False
-                                s = "message is{} valid".format('' if msg_valid else ' not')
-                                print(TAG+s)
-                                if last_req_sent in req_dict.keys():
-                                    s_req = req_dict[last_req_sent]
-                                    if s_req == 'date_time':
-                                        #-------------------------------------------------
-                                        default_s_dt = msg    # Global datetime var set
-                                        #-------------------------------------------------
-                                        break  # Done!
+                                if len(rx_buffer_s) >= le_msg:
+                                    b1 = rx_buffer_s[-3] == ':' and rx_buffer_s[-6] == ':' and rx_buffer_s[-12] == '-' and rx_buffer_s[-15] == '-'
+                                    has_tc = True if b1 else False
+                                    msg_valid = True if STX_rcvd and has_tc else False
+                                    s = "message is{} valid".format('' if msg_valid else ' not')
+                                    print(TAG+s)
+                                    if last_req_sent in req_dict.keys():
+                                        s_req = req_dict[last_req_sent]
+                                        if s_req == 'date_time':
+                                            #-------------------------------------------------
+                                            default_s_dt = msg    # Global datetime var set
+                                            #-------------------------------------------------
+                                            break  # Done!
                         if last_req_sent == req_rev_dict['unix_time']:
                             unix_dt = int(float(msg))
                             break  # Done!
@@ -466,7 +446,7 @@ def main():
     stop = False
     t_elapsed = 0
     t_curr = time.monotonic()
-    t_interval = 30 # in the future set to 600 (10 minutes)
+    t_interval = 60 # in the future set to 600 (10 minutes)
 
     try:
         while True:
