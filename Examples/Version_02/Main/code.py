@@ -48,11 +48,6 @@ req_rev_dict = {
    'weather': 102
     }
 
-acknak_dict = {
-    _ACK: 'ACK',
-    _NAK: 'NAK'
-}
-
 max_bytes = 2**5
 rx_buffer_len = max_bytes
 rx_buffer = bytearray(rx_buffer_len * b'\x00')
@@ -342,6 +337,7 @@ def dtstr_to_stru():
                 ret = (int(s[:4]), int(s[5:7]), int(s[8:10]), int(s[11:13]), int(s[14:16]), int(s[17:]), 0, 0, -1 )
             except ValueError as e:
                 print(TAG+f"Error = {e}")
+                raise
     return ret
 
 def tag_adj(t):
