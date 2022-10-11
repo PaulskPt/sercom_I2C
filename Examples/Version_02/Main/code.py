@@ -72,6 +72,7 @@ hour_old = 0
 min_old = 0
 tag_le_max = 20  # see tag_adj()
 has_cln = False
+msg_valid=None
 
 uart = UART(board.SDA, board.SCL, baudrate=4800, timeout=0, receiver_buffer_size=rx_buffer_len)
 
@@ -95,7 +96,7 @@ def setup():
     make_clock()
 
 def ck_uart():
-    global rx_buffer, rx_buffer_s, my_debug, last_req_sent, my_ads, default_s_dt, unix_dt, ACK_rcvd
+    global rx_buffer, rx_buffer_s, my_debug, last_req_sent, my_ads, default_s_dt, unix_dt, ACK_rcvd, msg_valid
     TAG = tag_adj('ck_uart():  ')
     nr_bytes = 0
     delay_ms = 0.2
@@ -110,7 +111,6 @@ def ck_uart():
     STX_idx = -1
     t_buf = None
     cln = ''
-    msg_valid = False
     b_start = b_end = 0
     b1 = False
     has_tc = False
@@ -416,7 +416,7 @@ def main():
                 print(TAG+f"mem_free= {gc.mem_free()}")
                 if isinstance(default_s_dt, str):
                     if len(default_s_dt) > 0:
-                        if not rtc_is_set:
+                        if not rtc_is_set and msg_valid:
                             dt = dtstr_to_stru()
                             if isinstance(dt, tuple):
                                 le = len(dt)
