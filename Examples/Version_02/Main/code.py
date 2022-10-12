@@ -398,8 +398,6 @@ def main():
                 t_shown = False
                 rtc_is_set = False  # sync buitl-in RTC from NTC)
                 req = req_rev_dict['date_time']
-                print(TAG+f"going to send request for \'{req_dict[req]}\'")
-                print(' '*20+f"to device with role: {roles_dict[1]}")
                 res = send_req(req)
                 if res == -1:
                     stop = True
