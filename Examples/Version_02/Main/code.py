@@ -421,8 +421,8 @@ def main():
                                     rtc.datetime = dts
                                     rtc_is_set = True
                                     t_check = time.localtime(time.time())
-                                    print(TAG+f"built-in RTC is synchronized from NTP pool")
-                                    print(TAG+"new time from built-in RTC={:02d}:{:02d}".format(t_check[3], t_check[4]))
+                                    print(TAG+f"built-in RTC is sync\'d from NTP")
+                                    print(TAG+"new time from RTC: {:02d}:{:02d}".format(t_check[3], t_check[4]))
                                 else:
                                     print(TAG+f"result dt {dt} is invalid. len(dt)= {le}. Skipping")
                         if start:
