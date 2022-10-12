@@ -11,5 +11,5 @@ secrets = {
     # 'timezone' : 'America/New_York',
     # 'tz_offset' : '-4',
     # 'timezone' : 'America/Kentucky/Louisville',
-    # 'tz_offset': '-5'
+    # 'tz_offset': '-4'
     }
