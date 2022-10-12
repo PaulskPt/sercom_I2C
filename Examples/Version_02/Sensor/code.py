@@ -362,6 +362,7 @@ def get_NTP():
                     # Get GMT/UTC datetime from NTP
                     dt = ntp.datetime  # type(dt) = time.struct_time
                     set_dt_globls(dt) # set the global default_dt, default_s_dt and default_tpl_dt
+                    print(TAG+f"time from NTP= \'{default_s_dt}\'")
                     if my_debug:
                         print(TAG+f"ntp.datetime()={dt}, type(ntp.datetime())={type(dt)}")
 
@@ -372,7 +373,7 @@ def get_NTP():
                             rtc.datetime = default_tpl_dt # set the built-in RTC from a datetime tuple
                             #----------------------------------------
                             rtc_is_set = True
-                            print(TAG+f"Built-in RTC is synchronized from NTP pool")
+                            print(TAG+f"built-in RTC is synchronized from NTP")
                             if my_debug:
                                 print(TAG+f"\n\t{dt}")
                         else:
@@ -661,17 +662,32 @@ def send_dt(s_epoch: str=''):
             print(TAG+"failed to send datetime")
         elif n > 0:
             print(TAG+f"datetime message sent. Nr of characters: {le2}")
-            if not my_debug:
-                print(TAG+f"contents of the message= {msg}") # bytearray(b' \x13\x022022-10-06 01:15:00')
-            #                                                             /\
-            #                                                            \x02 = STX ASCII code (indicates start of datetime)
+            if my_debug:
+                print(TAG+f"contents of the message= {msg}")
+            """
+             bytearray(b' \x13\x022022-10-06 01:15:00')
+                        /\
+                        byte0 = ' ' = 0x20 = 32 decimal (ascii value for space character)
+                                It is the address of the device with role 'Main',
+                                the device the sent the request for datetime.
+                            /\
+                            byte1 = \x13 = length of the datetime string following the STX code
+                                /\
+                                byte2 = \x02 = STX ASCII code (indicates start of datetime)
+            """
 
-""" ToDo """
+"""
+   Function send_us()
+
+   :param  None
+   :return None
+
+   This function sends a unix epoch value as a type str
+"""
 def send_ux():
     global epoch
     epoch = get_epoch()
-    s_epoch = str(epoch)
-    send_dt(s_epoch)
+    send_dt(str(epoch))
 
 """ ToDo """
 def send_wx():
