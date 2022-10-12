@@ -228,22 +228,6 @@ def get_epoch():
     return time.time()
 
 """
-    Function tpl_to_str()
-
-    :param  tuple
-    :return str
-
-    This function takes a tuple of 9-elements
-    and converts a part of the tuple to a string of 6 elements
-    format: yyyy-mm-dd hh:mm:ss
-"""
-def tpl_to_str(t: tuple=(2022,10,10,1,15,1,283,0,-1)):
-    ret = "2022-10-10 01:15:01"
-    if isinstance(t, tuple):
-        ret = "{}-{:02d}-{:02d} {:02d}:{:02d}:{:02d}".format(t[0], t[1], t[2], t[3], t[4], t[5])
-    return ret
-
-"""
     dtstru_to_str()
 
     param: None
