@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: MIT
 #
 # Serial communication via I2C (alias: 'Sercom I2C')
-# This script is intended for the device with the 'Sensor' role,
+# This script is intendedc for the device with the 'Sensor' role,
 # in my case an Unexpected Maker PROS3
 # Version 2
 #
@@ -86,7 +86,6 @@ rtc_is_set = False
 default_tpl_dt = (2022,10,10,1,15,1,283,0,-1)  # type tuple
 default_dt = time.struct_time((default_tpl_dt)) # type time.struct_time
 default_s_dt = "2022-10-10 01:15:00"  # type str
-
 epoch = None
 clock = None
 ntp = None
@@ -311,6 +310,29 @@ def set_dt_globls(dt):
         raise TypeError
 
 """
+    Function ck_secs()
+
+    :param  None
+    :return str
+
+    This function uses the global variable default_s_dt,
+    with the assumption that default_s_dt just has been set
+    (from withing get_NTP() ). It extracts the seconds value
+    and returns the seconds value.
+"""
+def ck_secs(dts):
+    TAG=tag_adj("ck_secs(): ")
+    if dts is None:
+        dts2 = default_s_dt
+    else:
+        print(TAG+f"param value= {dts}")
+        dts2 = dts  # we use the parameter
+
+    secs = int(dts2[-2:])   # ord(dts2[-2])
+    #print(TAG+f"secs = \'{secs}\'")
+    return secs
+
+"""
     Function get_NTP()
 
     :param  None
@@ -324,7 +346,6 @@ def get_NTP():
     global pool, ntp, rtc_is_set, default_dt, default_s_dt, default_tpl_dt
     TAG=tag_adj("get_NTP(): ")
     dt = None
-    tzo = 0  # default timeone offset in hours
     #default_dt = time.struct_time((2022, 9, 17, 12, 0, 0, 5, 261, -1))
 
     if use_ntp:
@@ -333,23 +354,20 @@ def get_NTP():
                 if not ntp:
                     pool = socketpool.SocketPool(wifi.radio)
                     # NOTE: tz_offset, integer, number of hours offset: 1, 2, 3, -5 etc.
-                    tzo = 1 if use_local_time else 0
-                    #ntp = adafruit_ntp.NTP(pool, tz_offset=tzo)
-                    ntp = NTP(pool, tz_offset=tzo)
+                    ntp = NTP(pool, tz_offset=tz_offset)
                     if ntp and my_debug:
                         print(TAG+"ntp object created")
                 # print(TAG+f"type(ntp)= {ntp}")
                 if ntp:
-                    #print(TAG+f"type(ntp)= {type(ntp)}")
-                    #print(TAG+f"dir(ntp)= {dir(ntp)}")
-                    #print(TAG+f"ntp._tz_offset= {ntp._tz_offset}")
-                    # Get GMT/UTC datetime from NTP
+                    if my_debug:
+                        # Note ntp._tz_offset returns the offset from UTC in seconds
+                        print(TAG+f"ntp._tz_offset= {ntp._tz_offset}")
                     dt = ntp.datetime  # type(dt) = time.struct_time
                     set_dt_globls(dt) # set the global default_dt, default_s_dt and default_tpl_dt
                     print(TAG+f"time from NTP= \'{default_s_dt}\'")
+                    print(TAG+f"timezone= \'{location}\'. Offset from UTC= {tz_offset} Hr(s)")
                     if my_debug:
                         print(TAG+f"ntp.datetime()={dt}, type(ntp.datetime())={type(dt)}")
-
                     rtc_is_set = False
                     if not rtc_is_set:
                         if isinstance(default_tpl_dt, tuple):
@@ -699,7 +717,7 @@ def empty_buffer():
     It also sets various global variables which some of them it reads from the file secrets.py
 """
 def setup():
-    global rtc, ntp, default_dt, tz_offset, use_local_time, aio_username, aio_key, location  # , pool
+    global rtc, ntp, default_dt, tz_offset, use_local_time, aio_username, aio_key, location, secs_synced  # , pool
     TAG=tag_adj("setup(): ")
 
     wifi.AuthMode.WPA2   # set only once
@@ -710,6 +728,7 @@ def setup():
     rtc = RTC()  # create the built-in rtc object
     if not rtc:
         print(TAG+"failed to create an instance of the RTC object")
+    secs_synced = False  # see get_NTP()
 
     lt = secrets.get("LOCAL_TIME_FLAG", None)
     if lt is None:
@@ -733,6 +752,8 @@ def setup():
                 tz_offset = 0
             else:
                 tz_offset = int(tz_offset0)
+                if my_debug:
+                    print(TAG+f"tz_offset= {tz_offset}")
     else:
         location = 'UTC'
         tz_offset = 0
