@@ -5,6 +5,8 @@
 #
 # Original filename: 'displayio_flipclock_ntp_test2_PaulskPt.py'
 # Modified to incorporate 'sercom_I2C' serial communication via I2C wires.
+# This script is intended for the device with the 'Main' role,
+# in my case an Adafruit PyPortal Titano
 # Version 2
 #
 import time
