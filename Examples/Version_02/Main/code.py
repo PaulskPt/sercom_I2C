@@ -316,7 +316,7 @@ def upd_tm(show_t: bool = False):
                     clock.second_pair = sp
                     sp2  = clock.second_pair
                     time.sleep(wait)
-                    # print(TAG+"Time = {}:{}".format(fp2, sp2))
+                    # print(TAG+"time = {}:{}".format(fp2, sp2))
                 except ValueError as e:
                     print(TAG)
                     raise
@@ -388,7 +388,7 @@ def main():
             if t_elapsed > 0 and t_elapsed % 10 == 0:
                 if t_elap_old != t_elapsed:
                     t_elap_old = t_elapsed
-                    print(TAG+f"Time elapsed: {t_elapsed}")
+                    print(TAG+f"time elapsed: {t_elapsed}")
             if rtc_is_set and (start or (t_elapsed > 0 and t_elapsed % 60 == 0)):
                 # At minute interval update the flipclock display
                 res = upd_tm(False)
@@ -442,7 +442,7 @@ def main():
             print(TAG+"we're going to stop...")
             raise KeyboardInterrupt
     except KeyboardInterrupt:
-        print("Keyboard interrupt. Exiting...")
+        print("keyboard interrupt. Exiting...")
         sys.exit()
     except ValueError as e:
         print("ValueError", e)
