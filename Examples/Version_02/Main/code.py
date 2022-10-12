@@ -23,13 +23,11 @@ from adafruit_displayio_flipclock.flip_clock import FlipClock
 sercom_I2C_version = 2.0
 
 my_debug = False
-use_ntp = True
 use_flipclock = True
 use_dynamic_fading = True
 
 _STX = const(0x02)  # Start-of-text ASCII code
 _ACK = const(0x06)  # Acknowledge ASCII code
-_NAK = const(0x15)  # Not acknowledged ASCII code . Not used yet but can be implemented
 
 roles_dict = {
     0: 'Main',
@@ -118,8 +116,8 @@ def ck_uart():
         while True:
             u_now = time.monotonic()
             if u_now > u_end:
-                print(TAG+"timed-out")  # u_now= {u_now}, u_end= {u_end}")
-                nr_bytes = 0  # timeout
+                print(TAG+"timed-out")
+                nr_bytes = 0
                 break
             #-----------------------------------------------------
             rx_buffer = uart.read(rx_buffer_len)  # Reception here
@@ -134,7 +132,7 @@ def ck_uart():
             if not nr_bytes:
                 time.sleep(delay_ms)
                 continue
-            if not my_debug:
+            if my_debug:
                 print(TAG+f"nr of bytes received= {nr_bytes}")
                 print(TAG+f"rcvd data= {rx_buffer}" ,end="\n")
             if nr_bytes >0:
@@ -145,13 +143,11 @@ def ck_uart():
                 #-------------------------------------------------------
                 if nr_bytes == 2 and not ACK_rcvd:
                     ACK_rcvd = True if nr_bytes ==2 and (rx_buffer_s.find(chr(_ACK)) == 1) else False
-                    # print(TAG+f"ACK_rcvd= {ACK_rcvd}")
                     time.sleep(delay_ms)
                     continue  # loop to receive the message
                 if nr_bytes > 2:
                     if not STX_rcvd:
                         STX_rcvd = True if rx_buffer_s.find(chr(_STX)) == 2 else False
-                        # print(TAG+f"STX_rcvd= {STX_rcvd}")
                         if STX_rcvd:
                             STX_idx = 2
                     # Check the STX flag again. Could be changed in last lines above
@@ -263,7 +259,9 @@ def make_clock():
                     v_pos=54)
             main_group = Group()
             main_group.append(clock)
-            main_group.scale = 2  # don't go higher than 2. Then the 'flipping' will be very slow
+            # don't go higher than 2.
+            # Then the 'flipping' will be very slow
+            main_group.scale = 2
             board.DISPLAY.show(main_group)
         except MemoryError as e:
             print(TAG+f"Error: {e}")
@@ -275,7 +273,8 @@ def dt_adjust():
         dt = time.localtime(time.time())
         unix_dt = time.time()
         default_dt = dt
-        default_s_dt = "{:d}-{:02d}-{:02d} {:02d}:{:02d}:{:02d}".format(dt[0], dt[1], dt[2], dt[3], dt[4], dt[5])
+        default_s_dt = "{:d}-{:02d}-{:02d} {:02d}:{:02d}:{:02d}".format(dt[0],
+            dt[1], dt[2], dt[3], dt[4], dt[5])
 
 def upd_tm(show_t: bool = False):
     global clock, default_s_dt, hour_old, min_old
@@ -283,7 +282,7 @@ def upd_tm(show_t: bool = False):
     wait = 1
     ret = 1
     if show_t and not rtc_is_set:
-        print(TAG+"built-in RTC is not (yet) set")
+        print(TAG+"built-in RTC is not set (yet)")
         return 0
     if default_s_dt is None:
         return -1
@@ -291,7 +290,6 @@ def upd_tm(show_t: bool = False):
         return -1
     try:
         dt_adjust()
-
         p_time = False
         le = len(default_s_dt)
         if le < 16:
@@ -307,7 +305,6 @@ def upd_tm(show_t: bool = False):
             p_time = True
         if p_time:
             if use_flipclock:
-
                 try:
                     fp = "{:02d}".format(hh)
                     clock.first_pair = fp
@@ -321,7 +318,6 @@ def upd_tm(show_t: bool = False):
                 except ValueError as e:
                     print(TAG)
                     raise
-                #time.sleep(0.2)
     except KeyboardInterrupt:
         ret = -1
     return ret
@@ -352,9 +348,7 @@ def tag_adj(t):
         le = len(t)
     if le >0:
         spc = tag_le_max - le
-        #print(f"spc= {spc}")
         ret = ""+t+"{0:>{1:d}s}".format("",spc)
-        #print(f"s=\'{s}\'")
     return ret
 
 def main():
@@ -366,7 +360,8 @@ def main():
             role = roles_dict[1]
     elif id.find('titano') >= 0:
         role = roles_dict[0]
-    time.sleep(5) # Give user time to set up a terminal window or so
+    # Give user time to set up a terminal window or so
+    time.sleep(5)
     print()
     print('=' * 36)
     print("Adafruit_DisplayIO_FlipClock")
@@ -375,7 +370,6 @@ def main():
     print(f"Running on an {id.upper()}")
     print(f"in the role of {role}")
     print('=' * 36)
-
     setup()
     res = 0
     start = True
@@ -385,7 +379,6 @@ def main():
     t_elapsed = 0
     t_curr = time.monotonic()
     t_interval = 60 # in the future set to 600 (10 minutes)
-
     try:
         while True:
             t_curr = time.monotonic()
@@ -405,13 +398,15 @@ def main():
                 t_shown = False
                 rtc_is_set = False  # sync buitl-in RTC from NTC)
                 req = req_rev_dict['date_time']
-                print(TAG+f"going to send request for {req_dict[req]} to device with role: {roles_dict[1]}")
+                print(TAG+f"going to send request for \'{req_dict[req]}\'")
+                print(' '*20+f"to device with role: {roles_dict[1]}")
                 res = send_req(req)
                 if res == -1:
                     stop = True
                     break
                 gc.collect()
-                nr_bytes = ck_uart()  # Check and handle incoming requests and control codes
+                # Check and handle incoming requests and control codes
+                nr_bytes = ck_uart()
                 if nr_bytes == -1:
                     stop = True
                     break
