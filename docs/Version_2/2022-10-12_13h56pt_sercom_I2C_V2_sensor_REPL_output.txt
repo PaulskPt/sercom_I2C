@@ -1,0 +1,79 @@
+Wednesday 2022-10-12 13h56 UTC+1
+by @PaulskPt
+Platform: Adafruit PyPortal Titano
+Project: Adafruit_DisplayIO_FlipClock with sercom_I2C
+Version: 2
+Script for device with role Sensor
+IDE: mu-editor v 1.1.1
+
+Note: The script is doing what it is meant to do:
+ 1) wait for a request for datetime from the device with role Main
+ 2) when a request is received the device with the role Sensor will answer the receipt with sending an ACK ascii code to the device from which it received the request
+ 2) Next gets an updated datetime thru the adafruit_ntp module
+ 3) converts the received time.struct_time into a string of format: 'yyyy-mm-dd hh:mm_ss'
+ 4) adds the address of the device with role Main in front of the message to me send as byte #0
+ 5) then adds the length of the datetime string as byte #1
+ 6) adds a STX ascii code as byte #2 into the message.
+ 7) adds the converted datetime string to the message.
+ 8) continues to loop inside loop().
+
+
+REPL output:
+
+soft reboot
+
+Auto-reload is on. Simply save files over USB to run them or enter REPL to disable.
+code.py output:
+]0;🐍192.168.1.111 | code.py | 8.0.0-beta.1-4-g1fd09cb6d\
+====================================
+SERCOM VIA I2C TEST
+Version 2.0
+Running on an UNEXPECTEDMAKER_PROS3
+in the role of Sensor
+====================================
+setup():                 using local time= True
+
+main():                  trying to connect WiFi...
+do_connect():            wifi.radio.enabled= True
+
+pr_scanned_ap():         
+Available WiFi networks (sorted on: 'rssi')
+	AP nr  8	SSID: Vodafone-287778_EXT           	RSSI: -50	Channel:  9
+	AP nr  6	SSID: MEO-AFM_EXT                   	RSSI: -71	Channel:  3
+	AP nr  9	SSID: Vodafone-287778               	RSSI: -75	Channel:  9
+	AP nr  0	SSID: devolo-1a9                    	RSSI: -82	Channel:  6
+	AP nr  1	SSID: MEO-WiFi                      	RSSI: -86	Channel: 11
+	AP nr  2	SSID: MEO-FEEE80                    	RSSI: -87	Channel: 11
+	AP nr  3	SSID: MEO-WiFi                      	RSSI: -88	Channel: 11
+	AP nr  4	SSID: MEO-WiFi                      	RSSI: -89	Channel: 11
+	AP nr  7	SSID: MEO-WiFi                      	RSSI: -90	Channel:  3
+	AP nr 13	SSID: Vodafone-DBE967               	RSSI: -91	Channel:  7
+	AP nr 12	SSID: NOS-1861                      	RSSI: -91	Channel:  8
+	AP nr  5	SSID: MEO-8997C0                    	RSSI: -91	Channel: 11
+	AP nr 10	SSID: MEO-WiFi                      	RSSI: -92	Channel:  9
+	AP nr 11	SSID: MEO-78CEB0                    	RSSI: -95	Channel:  9
+do_connect():            s_ip= '192.168.1.111'
+do_connect():            connected to Vodafone-287778_EXT!
+do_connect():            IP address is 192.168.1.111
+do_connect():            resolved google as 216.58.215.174
+do_connect():            no response
+do_connect():            Ping 216.58.215.174: 45.0 ms
+=====================================
+loop():                  loop nr:   1
+=====================================
+ck_uart():               received address: 0x25
+ck_uart():               received request: 100 = date_time
+ck_uart():               acknowledge on request sent
+loop():                  the device with role: Main requested to send: date_time
+loop():                  going to send date_time
+get_NTP():               ntp.datetime()=struct_time(tm_year=2022, tm_mon=10, tm_mday=12, tm_hour=13, tm_min=56, tm_sec=6, tm_wday=2, tm_yday=285, tm_isdst=-1), type(ntp.datetime())=<class 'struct_time'>
+get_NTP():               Built-in RTC is synchronized from NTP pool
+get_NTP():               default_dt is updated from NTP
+get_NTP():               default_dt=struct_time(tm_year=2022, tm_mon=10, tm_mday=12, tm_hour=13, tm_min=56, tm_sec=6, tm_wday=2, tm_yday=285, tm_isdst=-1), type(default_dt)= <class 'struct_time'>
+get_NTP():               default_s_dt= '2022-10-12 13:56:06',type(default_s_dt)= <class 'str'>
+get_NTP():               default_tpl_dt= '(2022, 10, 12, 13, 56, 6, 0, 0, -1)',type(default_tpl_dt)= <class 'tuple'>
+send_dt():               datetime message sent. Nr of characters: 22
+send_dt():               contents of the message= bytearray(b' \x13\x022022-10-12 13:56:06')
+=====================================
+loop():                  loop nr:   2
+=====================================

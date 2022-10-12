@@ -62,7 +62,7 @@ use_ntp = True
 use_local_time = None
 
 """ Pre-definitions of functions """
-def conv_strutime_to_str():
+def dtstr_to_tpl():
     pass
 
 # +-----------------------------------------------+
@@ -88,8 +88,10 @@ req_rcvd = 0
 msg_nr = 0
 rtc = None
 rtc_is_set = False
-default_dt = None
-default_s_dt = None
+default_tpl_dt = (2022,10,10,1,15,1,283,0,-1)  # type tuple
+default_dt = time.struct_time((default_tpl_dt)) # type time.struct_time
+default_s_dt = "2022-10-10 01:15:00"  # type str
+
 epoch = None
 clock = None
 ntp = None
@@ -100,7 +102,7 @@ tag_le_max = 25  # see tag_adj()
 
 if not use_ntp:
     default_dt = time.struct_time((2022, 9, 17, 12, 0, 0, 5, 261, -1))
-    default_s_dt = conv_strutime_to_str()
+    default_s_dt = dtstr_to_tpl()
 
 #time.sleep(5)
 
@@ -230,29 +232,104 @@ def wifi_is_connected():
 def get_epoch():
     return time.time()
 
-def conv_strutime_to_str(dt_stru :time.struct_time=(2022, 9, 17, 12, 0, 0, 5, 261, -1)):
-    TAG=tag_adj("conv_strutime_to_str(): ")
-    tm_year = 0
-    tm_mon = 1
-    tm_date = 2
-    tm_hour = 3
-    tm_min = 4
-    tm_sec = 5
+"""
+    Function tpl_to_str()
 
-    # print(TAG+f"param dt_stru= {dt_stru}")
-    if isinstance(dt_stru, time.struct_time):
-        yy = dt_stru[tm_year]
-        mo = dt_stru[tm_mon]
-        dd = dt_stru[tm_date]
-        hh = dt_stru[tm_hour]
-        mi = dt_stru[tm_min]
-        ss = dt_stru[tm_sec]
-        # we don't use the is_dst here
-    # ret example: "2022-10-09 12:00.10"
-    retval = "{}-{:02d}-{:02d} {:02d}:{:02d}:{:02d}".format(yy,mo,dd,hh,mi,ss)
+    :param  tuple
+    :return str
+
+    This function takes a tuple of 9-elements
+    and converts a part of the tuple to a string of 6 elements
+    format: yyyy-mm-dd hh:mm:ss
+"""
+def tpl_to_str(t: tuple=(2022,10,10,1,15,1,283,0,-1)):
+    ret = "2022-10-10 01:15:01"
+    if isinstance(t, tuple):
+        ret = "{}-{:02d}-{:02d} {:02d}:{:02d}:{:02d}".format(t[0], t[1], t[2], t[3], t[4], t[5])
+    return ret
+
+"""
+    dtstru_to_str()
+
+    param: None
+    return: str
+
+    This function takes global var default_dt (type: time.struct_time)
+    and converts it in to a 6-element string (yyyy-mm-dd hh:mm:ss)
+"""
+def dtstru_to_str():
+    global default_dt
+    TAG=tag_adj("dtstru_to_str(): ")
+    ret = ""
+    if isinstance(default_dt, time.struct_time):
+        t = default_dt
+        ret = "{}-{:02d}-{:02d} {:02d}:{:02d}:{:02d}".format(t[0], t[1], t[2], t[3], t[4], t[5])
+    else:
+        print(TAG+f"default_dt needs to be type time.struct_time. It is of type: {type(default_dt)}")
+        raise TypeError
+    return ret
+
+"""
+    dtstr_to_tpl()
+
+    param: None
+    return: tuple
+
+    This function takes global var default_s_dt (type: str)
+    and converts it in to a 9-element tuple of integers
+
+"""
+def dtstr_to_tpl():
+    global default_s_dt
+    TAG=tag_adj("dtstr_to_tpl(): ")
+    ret = ()
+    if isinstance(default_s_dt, str):
+        s = default_s_dt
+        le = len(s)
+        if le > 0 and le <= 19:
+            try:
+                # string in form 'yyyy-mm-dd hh:mm:ss'
+                #ret= (yy,         mo,          dd,           hh,            mi,            ss,         wd, yd, isdst)
+                ret = (int(s[:4]), int(s[5:7]), int(s[8:10]), int(s[11:13]), int(s[14:16]), int(s[17:]), 0, 0, -1 )
+            except ValueError as e:
+                print(TAG+f"Error = {e}")
+                raise
+    else:
+        print(TAG+f"default_s_dt needs to be type str. It is of type: {type(default_s_dt)}")
+        raise TypeError
+    return ret  # tuple
+
+"""
+    Function set_dt_globls()
+
+    :param  time.struct_time
+    :return None
+
+    This function uses the parameter dt to set the global datetime formats
+    by setting global variables:
+       - default_dt      directly by: default_dt = dt
+       - default_s_dt    by calling dtstru_to_str()
+       - default_tpl_dt  by calling dtstr_to_tpl()
+
+    If the type of parameter dt is not of type time.struct_time
+    this function raises a TypeError
+"""
+def set_dt_globls(dt):
+    global default_dt, default_s_dt, default_tpl_dt
+    TAG=tag_adj("set_dt_globls(): ")
     if my_debug:
-        print(TAG+f"retval= \'{retval}\'")
-    return retval
+        print(TAG+f"param dt, type(dt)= {type(dt)}")
+    if isinstance(dt, time.struct_time):
+        default_dt = dt
+        default_s_dt = dtstru_to_str() # convert to type str
+        default_tpl_dt = dtstr_to_tpl()  # convert to type tuple
+        if my_debug:
+            print(TAG+f"default_dt    ={default_dt}, type(default_dt)= {type(default_dt)}")
+            print(TAG+f"default_s_dt  = \'{default_s_dt}\',type(default_s_dt)= {type(default_s_dt)}")
+            print(TAG+f"default_tpl_dt= \'{default_tpl_dt}\',type(default_tpl_dt)= {type(default_tpl_dt)}")
+    else:
+        print(TAG+f"parameter dt needs to be type time.struct_time. It is of type: {type(dt)}")
+        raise TypeError
 
 """
     Function get_NTP()
@@ -265,7 +342,7 @@ def conv_strutime_to_str(dt_stru :time.struct_time=(2022, 9, 17, 12, 0, 0, 5, 26
     The result is put in the global variable default_dt
 """
 def get_NTP():
-    global pool, ntp, rtc_is_set, default_dt, default_s_dt
+    global pool, ntp, rtc_is_set, default_dt, default_s_dt, default_tpl_dt
     TAG=tag_adj("get_NTP(): ")
     dt = None
     tzo = 0  # default timeone offset in hours
@@ -284,44 +361,43 @@ def get_NTP():
                         print(TAG+"ntp object created")
                 # print(TAG+f"type(ntp)= {ntp}")
                 if ntp:
+                    #print(TAG+f"type(ntp)= {type(ntp)}")
                     #print(TAG+f"dir(ntp)= {dir(ntp)}")
                     #print(TAG+f"ntp._tz_offset= {ntp._tz_offset}")
                     # Get GMT/UTC datetime from NTP
-                    dt = ntp.datetime
-                    #print(TAG+f"dir(ntp)= {dir(ntp)}")
-                    """
-                    default_dt = dt
-                    if not my_debug:
-                        # print(TAG+f"type(ntp.datetime)= {type(dt)}")
-                        print(TAG+"ntp.datetime()={}, type(dt)={}".format(dt, type(dt)))
-                    """
-                    default_s_dt = conv_strutime_to_str(dt)
+                    dt = ntp.datetime  # type(dt) = time.struct_time
+                    set_dt_globls(dt) # set the global default_dt, default_s_dt and default_tpl_dt
                     if my_debug:
-                        print(TAG+f"default_s_dt= \'{default_s_dt}\'")
+                        print(TAG+f"ntp.datetime()={dt}, type(ntp.datetime())={type(dt)}")
+
+                    rtc_is_set = False
                     if not rtc_is_set:
-                        rtc.datetime = dt # set the built-in rtc
-                        rtc_is_set = True
-                        print(TAG+f"Built-in RTC is synchronized from NTP pool")
-                        if my_debug:
-                            print(TAG+f"\n\t{dt}")
+                        if isinstance(default_tpl_dt, tuple):
+                            #----------------------------------------
+                            rtc.datetime = default_tpl_dt # set the built-in RTC from a datetime tuple
+                            #----------------------------------------
+                            rtc_is_set = True
+                            print(TAG+f"Built-in RTC is synchronized from NTP pool")
+                            if my_debug:
+                                print(TAG+f"\n\t{dt}")
+                        else:
+                            print(TAG+f"expected type tuple. received type {type(dt)}")
+                            raise TypeError
             except OSError:
                 pass
             # Get the current time in seconds since Jan 1, 1970 and correct it for local timezone
             # Note: the if global flag 'use_local_time' is False then we use UTC time. Then the tz_offset will be 0.
             # (defined in secrets.h)
             # Convert the current time in seconds since Jan 1, 1970 to a struct_time
-            default_dt = time.localtime(time.time())
-            default_s_dt = conv_strutime_to_str(default_dt)
-            print(TAG+f"default_dt is updated from NTP")
+            dt = time.localtime(time.time())  # default_dt type = time.struct_time
+            set_dt_globls(dt) # update global default_dt, default_s_dt and default_tpl_dt from the built-in RTC
             if my_debug:
-                print(TAG+f"={default_dt}")
-                print(TAG+f"default_s_dt= \'{default_s_dt}\'")
-
+                print(TAG+f"datetime is updated from NTP")
         else:
             print("No internet. Setting default time")
     else:
         if not rtc_is_set:
-            rtc.datetime = default_dt # Set the built-in rtc to a fixed fictive datetime
+            rtc.datetime = default_tpl_dt # Set the built-in rtc to a fixed fictive datetime
             print("built-in RTC set with default time")
             rtc_is_set = True
 
@@ -554,13 +630,14 @@ def send_dt(s_epoch: str=''):
             msg[2] = _STX  # Start of message marker
             for i in range(le):
                 msg[3+i] = ord(s_epoch[i])
+            le2 = len(msg)
                 #--------------------------------------------------
             n =uart.write(msg)
             #--------------------------------------------------
             if n is None:
                 print(TAG+"failed to send unix time")
             elif n > 0:
-                print(TAG+f"{req_dict[req_rcvd]} \'{s_epoch}\' sent. Nr of characters: {le}")
+                print(TAG+f"{req_dict[req_rcvd]} \'{s_epoch}\' sent. Nr of characters: {le2}")
                 print(TAG+f"contents of the msg= {msg}") # bytearray(b' \x..\x......ToDo......')
                 #                                                             /\
                 #
@@ -571,7 +648,7 @@ def send_dt(s_epoch: str=''):
     """
     if isinstance(default_dt, time.struct_time):
         option = 1
-        s_dt = conv_strutime_to_str(default_dt)
+        s_dt = dtstr_to_tpl(default_dt)
         if my_debug:
             print(TAG+f"s_dt= \'{s_dt}\'")
     """
@@ -579,7 +656,7 @@ def send_dt(s_epoch: str=''):
         option = 1
         s_dt = default_s_dt
         if my_debug:
-            print(TAG+f"to do: sending default_dt= \'{s_dt}\'")
+            print(TAG+f"to do: sending default_s_dt= \'{default_s_dt}\'")
 
     le = len(s_dt)
     if le > 0:
@@ -590,15 +667,16 @@ def send_dt(s_epoch: str=''):
         msg[2] = _STX  # Start of message marker
         for i in range(le):
             msg[3+i] = ord(s_dt[i])
+        le2 = len(msg)
         #--------------------------------------------------
         n =uart.write(msg)
         #--------------------------------------------------
         if n is None:
             print(TAG+"failed to send datetime")
         elif n > 0:
-            print(TAG+f"datetime \'{s_dt}\' sent. Nr of characters: {le}")
-            if my_debug:
-                print(TAG+f"contents of the msg= {msg}") # bytearray(b' \x13\x022022-10-06 01:15:00')
+            print(TAG+f"datetime message sent. Nr of characters: {le2}")
+            if not my_debug:
+                print(TAG+f"contents of the message= {msg}") # bytearray(b' \x13\x022022-10-06 01:15:00')
             #                                                             /\
             #                                                            \x02 = STX ASCII code (indicates start of datetime)
 
