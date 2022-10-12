@@ -4,7 +4,8 @@
 # SPDX-License-Identifier: MIT
 #
 # Serial communication via I2C (alias: 'Sercom I2C')
-# This script is intendedc for the device with the 'Sensor' role, in my case an Unexpected Maker PROS3
+# This script is intendedc for the device with the 'Sensor' role,
+# in my case an Unexpected Maker PROS3
 # Version 2
 #
 import board
@@ -33,7 +34,6 @@ except ImportError:
 
 _STX = const(0x02)  # Start-of-text ASCII code
 _ACK = const(0x06)  # Acknowledge ASCII code
-_NAK = const(0x15)  # Not acknowledged ASCII code . Not used yet but can be implemented
 
 roles_dict = {
     0: 'Main',
@@ -45,11 +45,6 @@ req_dict = {
    101: 'unix_time',
    102: 'weather'
    }
-
-acknak_dict = {
-    _ACK: 'ACK',
-    _NAK: 'NAK'
-}
 
 # Buffers
 rx_buffer_len = 2
@@ -643,15 +638,6 @@ def send_dt(s_epoch: str=''):
                 #
             return
 
-    # print(TAG+f"default_s_dt= {default_s_dt}")
-
-    """
-    if isinstance(default_dt, time.struct_time):
-        option = 1
-        s_dt = dtstr_to_tpl(default_dt)
-        if my_debug:
-            print(TAG+f"s_dt= \'{s_dt}\'")
-    """
     if isinstance(default_s_dt, str):
         option = 1
         s_dt = default_s_dt
