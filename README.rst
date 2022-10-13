@@ -1,19 +1,19 @@
 Introduction
 ============
 
-This repo has been published because I wanted to share the example contained in this repo.
-The example in this repo is created because I had a need for exchanging short messages (maximum forty characters) from one MCU to another,
-preferebly via a serial (UART) connection. Since the device I wanted to serve the role of 'Main' (explained below in the section 
-'A word about Terminolgy'), is an Adafruit PyPortal Titano (`<https://www.adafruit.com/product/4444>`),
-and a second device I wanted to serve the role of 'Sensor' is an Unexpected Maker PROS3 (`<https://unexpectedmaker.com/shop/pros3>`), 
-I could not make use of the usual UART TX/RX pins because the Titano has these pins not connected to the 'outside world'. 
-However, both the Titano and the PROS3 have I2C ports.
+This repo has been published because I wanted to share with you the examples contained in this repo.
+The examples in this repo are created for the following reason: 
+
+
+  1. I was doing a project using a 'Flipclock' running on an Adafruit PyPortal Titano (`<https://www.adafruit.com/product/4444>`). 
+     However the script running on the Titano crashed because of Memory Errors. I decided that I needed to move certain tasks to another MCU;
+  2. For this reason I needed a way for the Titano to send task request messages to the second MCU. 
+     The second MCU needed to reply to the task request messages; execute the tasks and send back to the Titano the result of the task.
+
+
+For the communication between the two MCU's I preferred a serial (UART) connection. I could not make use of the usual UART TX/RX pins because the Titano
+has these pins not connected to the 'outside world'. However, both the Titano and the PROS3 have I2C ports.
 At first I tried to use the CircuitPython I2CTarget class. I failed to get transmissions working on the I2C-bus.
-Even after consultation on the appropriate Adafruit > CircuitPython channels on Discord I was on a 'dead' track.
-The I2CTarget class is documented in: 
-`<https://docs.circuitpython.org/en/latest/shared-bindings/i2ctarget/index.html#module-i2ctarget>`.
-That documentation contains one example. I used that example. I was unable to get it working.
-Unfortunately I did not find more examples on internet about this I2CTarget class.
 Thanks to @deshipu on Discord > Adafruit > CircuitPython > #help-with-circuitpython, who hinted me towards 'SERCOM' using I2C,
 After receiving this new information, I was able to start a 'Plan B': to let the devices communicate via a serial communication, 
 using UART, (CircuitPython busio.UART class) while using the I2C SCL and SDA wires for the communication.
@@ -32,13 +32,13 @@ SCL (device with role Main) ===> SDA (device with role Sensor)
 To accomplish this, I used a small breadboard and I2C cables (type 4-pin Grove male connector to 4 wires with male MOLEX pins for the Titano), 
 (type 4-pin STEMMA/Qwiic male connector to 4 wires with male MOLEX pins for the PROS3). See the image of the hardware setup in the docs folder.
 
-In this example the device with the Main role sends a request immediately after startup. It requests the device with the 
-Sensor role to send a datetime message. Next, the same type of request will be repeated at the preset interval time.
+In this example the device with the role 'Main' sends a request immediately after startup. It requests the device with the 
+role 'Sensor' (in my case an Unexpected Maker PROS3) to send a datetime message. Next, the same type of request will be repeated at the preset interval time.
 
-The device performing the Sensor role, after startup, will continuously check if there are incoming requests from a device with a Main role.
+After startingup, the device performing the role 'Sensor', will continuously check if there are incoming requests from a device with the role 'Main'.
 A request message contans 2 bytes: 
-1) the address of the device with a Sensor role that needs to handle the request;
-2) the request code. In this example the code value is (int) 100.
+1) the address of the device with a Sensor role, that needs to handle the request;
+2) the request code. In this example the code value is (int) 100 (= datetime)
 
 Below a flowchart of the handling of a received request:
 
@@ -50,7 +50,7 @@ REQUEST (2-byte transmission) received?                           (FLOWCHART)
                 > request code is valid? (exsists?)
                     Yes >
                         > copy request code to global var req_rcvd;
-                        > send acknowledge to originator (device with Main role)
+                        > send acknowledge to originator (device with Main role). Next send the requested message (e.g. datetime).
                     > No
                         > Do nothing
             > No
