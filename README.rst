@@ -5,7 +5,7 @@ This repo has been published because I wanted to share with you the examples con
 The examples in this repo are created for the following reason: 
 
 
-  1. I was doing a project using a 'Flipclock' running on an Adafruit PyPortal Titano (`<https://www.adafruit.com/product/4444>`). 
+  1. I was doing a project using a 'Flipclock' running on an Adafruit PyPortal Titano (see info about used hardware below). 
      However the script running on the Titano crashed because of Memory Errors. I decided that I needed to move certain tasks to another MCU;
   2. For this reason I needed a way for the Titano to send task request messages to the second MCU. 
      The second MCU needed to reply to the task request messages; execute the tasks and send back to the Titano the result of the task.
