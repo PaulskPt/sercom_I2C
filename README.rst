@@ -79,6 +79,8 @@ b) call ck_uart() to check incoming acknowlegements and incoming replies, in thi
 Also in the script of the Main device the user is able to interrupt the process by typing the key-combination CTRL+C.
 Then the execution of this script will be ended by calling 'sys.exit()'.
 
+As intended, the handing over tasks to a second MCU, indeed resulted in the PyPortal Titano now running the FlipClock script without Memory Errors.
+
 A word about Terminology
 ========================
 It is maybe a bit weird to name a microcontroller device a 'Sensor'.
