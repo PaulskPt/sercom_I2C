@@ -33,7 +33,7 @@ To accomplish this, I used a small breadboard and I2C cables (type 4-pin Grove m
 (type 4-pin STEMMA/Qwiic male connector to 4 wires with male MOLEX pins for the PROS3). See the image of the hardware setup in the docs folder.
 
 In this example the device with the role 'Main' sends a request immediately after startup. It requests the device with the 
-role 'Sensor' (in my case an Unexpected Maker PROS3) to send a datetime message. Next, the same type of request will be repeated at the preset interval time.
+role 'Sensor' to send a datetime message. Next, the same type of request will be repeated at the preset interval time.
 
 After startingup, the device performing the role 'Sensor', will continuously check if there are incoming requests from a device with the role 'Main'.
 A request message contans 2 bytes: 
