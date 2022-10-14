@@ -111,7 +111,7 @@ On the other hand the PROS3 lacks a display which the Titano has. Together they 
 This repo is only the first step to the idea of moving the work (and memory) load to a second device. 
 It realizes my wish of using the I2C bus for serial communication. As you can read (and please try yourself).
 This 'plan B': Sercom I2C, is now working. A logical next step will be adding the script for the device performing the 'Main role'
-into the Adafruit_CircuitPython_DisplayIO_FlipClock example script.
+into the Adafruit_CircuitPython_DisplayIO_FlipClock example script.This is acomplished in the Version 2 example.
 
 Hardware requirements
 =====================
